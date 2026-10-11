@@ -1,0 +1,329 @@
+{
+ "surum": "v01",
+ "palet": "paletler/endesga-32.hex",
+ "araç": "Claude, kodla çizim (kaynak/ui_kiti_v01.py)",
+ "varliklar": {
+  "ui_panel_v01": {
+   "boyut": [
+    24,
+    24
+   ],
+   "dilim": {
+    "sol": 8,
+    "ust": 8,
+    "sag": 8,
+    "alt": 8
+   },
+   "not_": "9-dilimli; kenarlar gerilebilir, köşe 8x8"
+  },
+  "ui_panel_kart_v01": {
+   "boyut": [
+    24,
+    24
+   ],
+   "dilim": {
+    "sol": 8,
+    "ust": 8,
+    "sag": 8,
+    "alt": 8
+   },
+   "not_": "9-dilimli; kenarlar gerilebilir, köşe 8x8"
+  },
+  "ui_slot_v01": {
+   "boyut": [
+    28,
+    28
+   ],
+   "not_": "24x24 eşya ikonu içeri ortalanır (kenardan 2 piksel)"
+  },
+  "ui_slot_secili_v01": {
+   "boyut": [
+    28,
+    28
+   ],
+   "not_": "24x24 eşya ikonu içeri ortalanır (kenardan 2 piksel)"
+  },
+  "ui_cubuk_cerceve_v01": {
+   "boyut": [
+    12,
+    7
+   ],
+   "dilim": {
+    "sol": 3,
+    "ust": 0,
+    "sag": 3,
+    "alt": 0
+   },
+   "icAlan": "x=1..w-2, y=1..5",
+   "not_": "9-dilimli yatay; iç alan 5 piksel yüksek"
+  },
+  "ui_cubuk_dolgu_kirmizi_v01": {
+   "boyut": [
+    4,
+    5
+   ],
+   "not_": "yatay gerilir; can=kirmizi, boss=turuncu, XP=yesil, mana/ek=mavi, altin=altin"
+  },
+  "ui_cubuk_dolgu_turuncu_v01": {
+   "boyut": [
+    4,
+    5
+   ],
+   "not_": "yatay gerilir; can=kirmizi, boss=turuncu, XP=yesil, mana/ek=mavi, altin=altin"
+  },
+  "ui_cubuk_dolgu_yesil_v01": {
+   "boyut": [
+    4,
+    5
+   ],
+   "not_": "yatay gerilir; can=kirmizi, boss=turuncu, XP=yesil, mana/ek=mavi, altin=altin"
+  },
+  "ui_cubuk_dolgu_mavi_v01": {
+   "boyut": [
+    4,
+    5
+   ],
+   "not_": "yatay gerilir; can=kirmizi, boss=turuncu, XP=yesil, mana/ek=mavi, altin=altin"
+  },
+  "ui_cubuk_dolgu_altin_v01": {
+   "boyut": [
+    4,
+    5
+   ],
+   "not_": "yatay gerilir; can=kirmizi, boss=turuncu, XP=yesil, mana/ek=mavi, altin=altin"
+  },
+  "ui_buton_v01": {
+   "boyut": [
+    24,
+    16
+   ],
+   "dilim": {
+    "sol": 6,
+    "ust": 6,
+    "sag": 6,
+    "alt": 6
+   }
+  },
+  "ui_buton_basili_v01": {
+   "boyut": [
+    24,
+    16
+   ],
+   "dilim": {
+    "sol": 6,
+    "ust": 6,
+    "sag": 6,
+    "alt": 6
+   }
+  },
+  "ui_buton_pasif_v01": {
+   "boyut": [
+    24,
+    16
+   ],
+   "dilim": {
+    "sol": 6,
+    "ust": 6,
+    "sag": 6,
+    "alt": 6
+   }
+  },
+  "ui_tik_bos_v01": {
+   "boyut": [
+    12,
+    12
+   ]
+  },
+  "ui_tik_dolu_v01": {
+   "boyut": [
+    12,
+    12
+   ]
+  },
+  "ikon_kalp_v01": {
+   "boyut": [
+    8,
+    8
+   ]
+  },
+  "ikon_altin_v01": {
+   "boyut": [
+    8,
+    8
+   ]
+  },
+  "ikon_xp_v01": {
+   "boyut": [
+    8,
+    8
+   ]
+  },
+  "ikon_kilit_v01": {
+   "boyut": [
+    8,
+    8
+   ]
+  },
+  "ikon_onay_v01": {
+   "boyut": [
+    8,
+    8
+   ]
+  },
+  "menu_ayar_v01": {
+   "boyut": [
+    16,
+    16
+   ]
+  },
+  "ikon_kafatasi_v01": {
+   "boyut": [
+    16,
+    16
+   ]
+  },
+  "efekt_vurus_v01_1": {
+   "boyut": [
+    24,
+    24
+   ],
+   "kare": 1
+  },
+  "efekt_vurus_v01_2": {
+   "boyut": [
+    24,
+    24
+   ],
+   "kare": 2
+  },
+  "efekt_vurus_v01_3": {
+   "boyut": [
+    24,
+    24
+   ],
+   "kare": 3
+  },
+  "efekt_iyilesme_v01_1": {
+   "boyut": [
+    16,
+    16
+   ],
+   "kare": 1
+  },
+  "efekt_iyilesme_v01_2": {
+   "boyut": [
+    16,
+    16
+   ],
+   "kare": 2
+  },
+  "efekt_iyilesme_v01_3": {
+   "boyut": [
+    16,
+    16
+   ],
+   "kare": 3
+  },
+  "efekt_hasar_aldin_v01_1": {
+   "boyut": [
+    32,
+    32
+   ],
+   "kare": 1
+  },
+  "efekt_hasar_aldin_v01_2": {
+   "boyut": [
+    32,
+    32
+   ],
+   "kare": 2
+  },
+  "efekt_boss_oldu_v01_1": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 1
+  },
+  "efekt_boss_oldu_v01_2": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 2
+  },
+  "efekt_boss_oldu_v01_3": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 3
+  },
+  "efekt_boss_oldu_v01_4": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 4
+  },
+  "efekt_konfeti_v01_1": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 1
+  },
+  "efekt_konfeti_v01_2": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 2
+  },
+  "efekt_konfeti_v01_3": {
+   "boyut": [
+    48,
+    48
+   ],
+   "kare": 3
+  },
+  "kurdele_zafer_v01": {
+   "boyut": [
+    96,
+    24
+   ],
+   "not_": "yazı uygulamadan eklenir; yazı alanı x=14..81, y=7..14"
+  },
+  "kurdele_yenilgi_v01": {
+   "boyut": [
+    96,
+    24
+   ],
+   "not_": "yazı uygulamadan eklenir; yazı alanı x=14..81, y=7..14"
+  },
+  "slot_bos_kilic_v01": {
+   "boyut": [
+    24,
+    24
+   ],
+   "kaynak": "kilic_t1_tahta_v02.png",
+   "not_": "soluk silüet: boş slot"
+  },
+  "slot_bos_zirh_v01": {
+   "boyut": [
+    24,
+    24
+   ],
+   "kaynak": "zirh_t1_tahta_v02.png",
+   "not_": "soluk silüet: boş slot"
+  },
+  "slot_bos_kozmetik_v01": {
+   "boyut": [
+    24,
+    24
+   ],
+   "kaynak": "kozmetik_pelerin_v01.png",
+   "not_": "soluk silüet: boş slot"
+  }
+ }
+}
