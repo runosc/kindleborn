@@ -1,5 +1,5 @@
 'use strict';
-importScripts('./config.js', './derive.js', './content.js', './game.js');
+importScripts('./config.js', './content.js', './derive.js', './game.js');
 self.onmessage = event => {
   try {
     const task = event.data;

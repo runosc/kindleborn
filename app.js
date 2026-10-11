@@ -7,19 +7,24 @@
   const B = RutinData;
   const G = RutinGame, V = RutinViews;
   const $ = selector => document.querySelector(selector);
+  document.querySelectorAll('[data-text]').forEach(el => { el.textContent = RutinContent.TEXT[el.dataset.text]; });
+  document.querySelectorAll('[data-label]').forEach(el => { el.setAttribute('aria-label', RutinContent.TEXT[el.dataset.label]); });
+  document.querySelectorAll('[data-copy]').forEach(el => { el.textContent = RutinContent.COPY[el.dataset.copy]; });
+  for (const attr of ['aria-label','placeholder']) document.querySelectorAll('[data-copy-' + attr + ']').forEach(el => { el.setAttribute(attr,RutinContent.COPY[el.getAttribute('data-copy-' + attr)]); });
   const main = $('#main');
   const habitDialog = $('#habit-dialog');
   let state = emptyState();
   function emptyState() { return { habits: [], ticks: [], seasons: [], gunler: [], purchases: [], equips: [], settings: { schemaVersion: 2, karakterAdi: null, oyunAyar: G.validateConfig(C.GAME_CONFIG) } }; }
   let today = D.localDate(new Date());
-  let page = 'boss';
+  let page = 'boss', meTab = 'items', lastItemId = null, historyDate = null;
   let devOpen = false, simBusy = false, simResult = null, impact = null, configDraft = null;
   let simInputs = { consistency: 80, seed: 'rutin-v1', seasonId: null };
   let editingId = null;
   let busy = false;
   let initialized = false;
-  let storageStatus = 'Depolama durumu kontrol ediliyor.';
-  let offlineStatus = 'Çevrimdışı hazırlık sürüyor.';
+  let renderedKey = null;
+  let storageStatus = RutinContent.COPY.copy052;
+  let offlineStatus = RutinContent.COPY.copy053;
   let registration;
   let toastTimer;
   function esc(value) {
@@ -33,8 +38,8 @@
     toastTimer = setTimeout(() => { element.hidden = true; }, 5000);
   }
   function errorMessage(error) {
-    if (error && error.name === 'QuotaExceededError') return 'Cihaz depolaması dolu. Bir yedek alıp yer açmayı dene.';
-    return error && error.message ? error.message : 'İşlem tamamlanamadı. Tekrar dene.';
+    if (error && error.name === 'QuotaExceededError') return RutinContent.COPY.copy054;
+    return error && error.message ? error.message : RutinContent.COPY.copy055;
   }
   function refreshDate() {
     const next = D.localDate(new Date());
@@ -44,15 +49,20 @@
   }
   async function reload() { refreshDate(); state = await S.sync(today, Date.now()); render(); }
   function render() {
+    const key = page + ':' + (page === 'me' ? meTab : '');
+    const scrolls = renderedKey === key ? ['#main','.me-content','.habit-scroll','.streak-list','.season-list'].map(selector => [selector, document.querySelector(selector)?.scrollTop || 0]) : [];
     main.setAttribute('aria-busy', String(busy));
     document.querySelectorAll('[data-page]').forEach(button => {
       if (button.dataset.page === page) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     });
-    const status = { storageStatus, offlineStatus, devOpen, simBusy, simResult, configDraft, simInputs };
+    const status = { meTab, lastItemId, historyDate, storageStatus, offlineStatus, devOpen, simBusy, simResult, configDraft, simInputs };
     const views = { boss: V.bossPage, today: V.todayPage, me: V.mePage, shop: V.shopPage, history: V.historyPage, settings: V.settingsPage };
+    main.className = page === 'boss' ? 'main-battle' : page === 'me' ? 'main-me' : 'page-scroll';
     main.innerHTML = views[page](state, today, status);
     V.mount(state, today, impact);
+    scrolls.forEach(([selector, top]) => { const element = document.querySelector(selector); if (element) element.scrollTop = top; });
+    renderedKey = key;
   }
   function renderSettings() { render(); }
   function openCharacter() {
@@ -62,7 +72,7 @@
   }
   function selectedConfig() {
     const form = $('#config-form');
-    if (!form.reportValidity()) throw new Error('Denge alanlarını kontrol et.');
+    if (!form.reportValidity()) throw new Error(RutinContent.COPY.copy056);
     const config = {};
     for (const key of Object.keys(C.GAME_CONFIG)) {
       const input = form.elements.namedItem(key);
@@ -76,16 +86,16 @@
       const config = selectedConfig();
       const consistency = Number($('#consistency').value) / 100;
       const seed = $('#sim-seed').value;
-      if (!seed.trim() || consistency < 0 || consistency > 1 || !Number.isFinite(consistency)) throw new Error('Tutarlılık 0–100 arasında, tohum dolu olmalı.');
+      if (!seed.trim() || consistency < 0 || consistency > 1 || !Number.isFinite(consistency)) throw new Error(RutinContent.COPY.copy057);
       const season = state.seasons.find(item => item.id === $('#replay-season').value);
-      if (mode === 'replay' && !season) throw new Error('Henüz sezon yok.');
+      if (mode === 'replay' && !season) throw new Error(RutinContent.COPY.copy058);
       const worker = new Worker('./simulator.js');
       configDraft = config;
       simInputs = { consistency: consistency * 100, seed, seasonId: season ? season.id : null };
       simBusy = true; render();
       const result = await new Promise((resolve, reject) => {
         worker.onmessage = event => { worker.terminate(); event.data.error ? reject(new Error(event.data.error)) : resolve(event.data.result); };
-        worker.onerror = () => { worker.terminate(); reject(new Error('Simülatör açılamadı. Yeniden dene.')); };
+        worker.onerror = () => { worker.terminate(); reject(new Error(RutinContent.COPY.copy059)); };
         worker.postMessage({ mode, config, consistency, seed, state, season, today });
       });
       simResult = result;
@@ -122,13 +132,13 @@
     if (busy) return;
     const habit = state.habits.find(item => item.id === id);
     editingId = habit ? id : null;
-    $('#habit-title').textContent = habit ? 'Alışkanlığı düzenle' : 'Yeni alışkanlık';
+    $('#habit-title').textContent = habit ? RutinContent.COPY.copy060 : RutinContent.COPY.copy061;
     $('#habit-name').value = habit ? habit.ad : '';
     $('#habit-type').value = habit ? habit.tur : C.TYPES[0];
     $('#habit-difficulty').value = habit ? habit.zorluk : 2;
-    $('#save-habit').textContent = habit ? 'Değişiklikleri kaydet' : 'Alışkanlığı ekle';
+    $('#save-habit').textContent = habit ? RutinContent.COPY.copy062 : RutinContent.COPY.copy063;
     $('#habit-actions').hidden = !habit;
-    $('#archive-habit').textContent = habit && habit.arsiv ? 'Arşivden çıkar' : 'Arşivle';
+    $('#archive-habit').textContent = habit && habit.arsiv ? RutinContent.COPY.copy064 : RutinContent.COPY.copy065;
     $('#delete-habit').hidden = Boolean(habit && !G.canDeleteHabit(habit.id, state.ticks));
     $('#habit-error').textContent = '';
     habitDialog.showModal();
@@ -154,41 +164,41 @@
     anchor.href = url; anchor.download = file.name;
     document.body.append(anchor); anchor.click(); anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
-    toast('Yedek dosyası hazır. İndirmeler / Dosyalar bölümünü kontrol et.');
+    toast(RutinContent.COPY.copy066);
   }
   async function shareBackup() {
     const file = backupFile();
     if (!navigator.canShare || !navigator.canShare({ files: [file] }) || !navigator.share) {
-      toast('Bu tarayıcı dosya paylaşımını desteklemiyor. JSON yedeğini indir.');
+      toast(RutinContent.COPY.copy067);
       return;
     }
-    try { await navigator.share({ files: [file], title: 'Kindleborn yedeği' }); }
-    catch (error) { if (error.name !== 'AbortError') toast('Paylaşım açılamadı. JSON yedeğini indir.'); }
+    try { await navigator.share({ files: [file], title: RutinContent.COPY.copy068 }); }
+    catch (error) { if (error.name !== 'AbortError') toast(RutinContent.COPY.copy069); }
   }
   async function importBackup(file) {
     if (!file || busy) return;
     try {
-      if (file.size > 25 * 1024 * 1024) throw new Error('Yedek dosyası 25 MB’tan küçük olmalıdır.');
+      if (file.size > 25 * 1024 * 1024) throw new Error(RutinContent.COPY.copy070);
       refreshDate();
       const restored = B.validateBackup(JSON.parse(await file.text()), today);
-      if (!await confirmAction('Yedeği geri yükle?', `${restored.habits.length} alışkanlık, ${restored.ticks.length} tik ve ${restored.seasons.length} sezon yüklenecek. Alışkanlıklar, tikler, sezonlar, gün defteri ve eşyalar dahil mevcut verilerin tamamı silinip bu yedekle değiştirilecek.`, 'Veriyi değiştir')) return;
-      if (await mutate(() => S.replaceAll(restored), 'Yedek geri yüklendi.')) { simResult = null; configDraft = null; if (!state.settings.karakterAdi) openCharacter(); }
-    } catch (error) { toast(error instanceof SyntaxError ? 'Dosya geçerli bir JSON yedeği değil.' : errorMessage(error)); }
+      if (!await confirmAction(RutinContent.COPY.copy071, RutinContent.interpolate('app001', [restored.habits.length, restored.ticks.length, restored.seasons.length]), RutinContent.COPY.copy072)) return;
+      if (await mutate(() => S.replaceAll(restored), RutinContent.COPY.copy073)) { simResult = null; configDraft = null; if (!state.settings.karakterAdi) openCharacter(); }
+    } catch (error) { toast(error instanceof SyntaxError ? RutinContent.COPY.copy074 : errorMessage(error)); }
   }
   async function updateStorageStatus(ask = false) {
     try {
-      if (!navigator.storage || !navigator.storage.persisted) storageStatus = 'Bu tarayıcı depolama durumunu bildirmiyor.';
+      if (!navigator.storage || !navigator.storage.persisted) storageStatus = RutinContent.COPY.copy075;
       else {
         let persisted = await navigator.storage.persisted();
         if (ask && !persisted && navigator.storage.persist) persisted = await navigator.storage.persist();
-        storageStatus = persisted ? 'Kalıcı depolama izni verildi.' : 'Kalıcı depolama izni verilmedi. Yedek almayı unutma.';
+        storageStatus = persisted ? RutinContent.COPY.copy076 : RutinContent.COPY.copy077;
       }
-    } catch (_) { storageStatus = 'Depolama durumu okunamadı. Yedek almayı unutma.'; }
+    } catch (_) { storageStatus = RutinContent.COPY.copy078; }
     if (initialized && page === 'settings') render();
   }
   async function setupWorker() {
     if (!('serviceWorker' in navigator)) {
-      offlineStatus = 'Bu tarayıcı çevrimdışı uygulama desteği sunmuyor.';
+      offlineStatus = RutinContent.COPY.copy079;
       return;
     }
     const showWaiting = () => {
@@ -208,25 +218,25 @@
         if (worker) worker.addEventListener('statechange', () => {
           if (worker.state === 'installed') showWaiting();
           if (worker.state === 'redundant') {
-            offlineStatus = 'Çevrimdışı hazırlık tamamlanamadı. İnternete bağlanıp yeniden aç.';
+            offlineStatus = RutinContent.COPY.copy080;
             if (initialized && page === 'settings') render();
           }
         });
       });
       await navigator.serviceWorker.ready;
-      offlineStatus = 'Uygulama kabuğu hazır. Çevrimdışı açabilirsin.';
-    } catch (_) { offlineStatus = 'Çevrimdışı hazırlık tamamlanamadı. HTTPS veya localhost üzerinden aç.'; }
+      offlineStatus = RutinContent.COPY.copy081;
+    } catch (_) { offlineStatus = RutinContent.COPY.copy082; }
     if (initialized && page === 'settings') render();
   }
-  $('#habit-type').innerHTML = C.TYPES.map(type => `<option>${type}</option>`).join('');
-  $('#habit-difficulty').innerHTML = Object.entries(C.DIFFICULTIES).map(([value, name]) => `<option value="${value}">${name} (${value})</option>`).join('');
+  $('#habit-type').innerHTML = C.TYPES.map(type => RutinContent.interpolate('app002', [type])).join('');
+  $('#habit-difficulty').innerHTML = Object.entries(RutinContent.DIFFICULTY_LABELS).map(([value, name]) => RutinContent.interpolate('app003', [value, name, value])).join('');
   $('#close-habit').addEventListener('click', () => { if (!busy) habitDialog.close(); });
   habitDialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
   $('#habit-form').addEventListener('submit', async event => {
     event.preventDefault();
     if (busy) return;
     const ad = $('#habit-name').value.trim();
-    if (!ad) { $('#habit-error').textContent = 'Bir alışkanlık adı yaz.'; $('#habit-name').focus(); return; }
+    if (!ad) { $('#habit-error').textContent = RutinContent.COPY.copy083; $('#habit-name').focus(); return; }
     refreshDate();
     const old = state.habits.find(habit => habit.id === editingId);
     const habit = {
@@ -234,18 +244,18 @@
       zorluk: Number($('#habit-difficulty').value), haftalikHedef: 7,
       olusturma: old ? old.olusturma : today, arsiv: old ? old.arsiv : false
     };
-    if (await mutate(() => S.saveHabit(habit, D.localDate(new Date()), Date.now()), old ? 'Değişiklikler kaydedildi. Eski tiklerin bilgisi korundu.' : 'Yeni alışkanlığın hazır.')) habitDialog.close();
+    if (await mutate(() => S.saveHabit(habit, D.localDate(new Date()), Date.now()), old ? RutinContent.COPY.copy084 : RutinContent.COPY.copy085)) habitDialog.close();
   });
   $('#archive-habit').addEventListener('click', async () => {
     const habit = state.habits.find(item => item.id === editingId);
     if (!habit || busy) return;
-    if (await mutate(() => S.saveHabit({ ...habit, arsiv: !habit.arsiv }, D.localDate(new Date()), Date.now()), habit.arsiv ? 'Alışkanlık arşivden çıkarıldı.' : 'Arşivlendi. Geçmiş tiklerin korundu.')) habitDialog.close();
+    if (await mutate(() => S.saveHabit({ ...habit, arsiv: !habit.arsiv }, D.localDate(new Date()), Date.now()), habit.arsiv ? RutinContent.COPY.copy086 : RutinContent.COPY.copy087)) habitDialog.close();
   });
   $('#delete-habit').addEventListener('click', async () => {
     const habit = state.habits.find(item => item.id === editingId);
     if (!habit || busy) return;
-    if (!await confirmAction('Alışkanlık kalıcı olarak silinsin mi?', `“${habit.ad}” ve ona ait tüm tikler silinecek. Bu işlem geri alınamaz.`, 'Kalıcı olarak sil')) return;
-    if (await mutate(() => S.deleteHabit(habit.id, D.localDate(new Date()), Date.now()), 'Alışkanlık ve tikleri silindi.')) habitDialog.close();
+    if (!await confirmAction(RutinContent.COPY.copy088, RutinContent.interpolate('app004', [habit.ad]), RutinContent.COPY.copy089)) return;
+    if (await mutate(() => S.deleteHabit(habit.id, D.localDate(new Date()), Date.now()), RutinContent.COPY.copy090)) habitDialog.close();
   });
   main.addEventListener('click', async event => {
     const button = event.target.closest('button[data-action]');
@@ -266,23 +276,34 @@
         if (added) impact = { amount: Math.max(0, before - after), until: Date.now() + 650 };
         else impact = null;
         return added;
-      }, added => added ? 'Tik kaydedildi. Boss hasar aldı.' : 'Tik geri alındı. Hasar geri çevrildi.');
+      }, added => added ? RutinContent.COPY.copy091 : RutinContent.COPY.copy092);
+    }
+    if (action === 'calendar-day') { historyDate = button.dataset.date; render(); main.querySelector(`[data-date="${historyDate}"]`)?.focus({preventScroll:true}); }
+    if (action === 'me-tab') { meTab = button.dataset.tab; render(); main.querySelector(`[data-tab="${meTab}"]`)?.focus({ preventScroll: true }); }
+    if (action === 'inventory' || action === 'unequip') {
+      const item = RutinContent.ITEMS.find(item => item.id === id);
+      const slot = action === 'unequip' ? button.dataset.slot : item && G.slotFor(item);
+      const gear = G.equipmentAt(state.equips, G.dayEnd(today));
+      if (item) lastItemId = item.id;
+      const removal = action === 'unequip' || gear[slot]?.id === id;
+      if (removal && !gear[slot]) return;
+      await mutate(() => removal ? S.unequip(slot,today,Date.now()) : S.equip(id,today,Date.now()), removal ? RutinContent.TEXT.unequippedToast : RutinContent.TEXT.equippedToast);
     }
     if (action === 'rename') openCharacter();
-    if (action === 'today-page') { page = 'today'; render(); }
+    if (action === 'today-page') { page = 'boss'; render(); }
     if (action === 'settings') { page = 'settings'; render(); }
-    if (action === 'close-season') await mutate(() => S.closeSeason(D.localDate(new Date()), Date.now()), 'Sezon kapandı. Yeni mücadele tam canla başlıyor.');
-    if (action === 'buy') await mutate(() => S.purchase(id, D.localDate(new Date()), Date.now()), 'Eşya satın alındı. Dilediğinde kuşanabilirsin.');
-    if (action === 'equip') await mutate(() => S.equip(id, D.localDate(new Date()), Date.now()), 'Eşya kuşanıldı.');
-    if (action === 'reset-config') await mutate(async () => { await S.saveSettings({ oyunAyar: G.validateConfig(C.GAME_CONFIG) }); configDraft = null; }, 'Varsayılan ayarlar yeni sezonlara uygulanacak.');
+    if (action === 'close-season') await mutate(() => S.closeSeason(D.localDate(new Date()), Date.now()), RutinContent.COPY.copy093);
+    if (action === 'buy') await mutate(() => S.purchase(id, D.localDate(new Date()), Date.now()), RutinContent.COPY.copy094);
+    if (action === 'equip') await mutate(() => S.equip(id, D.localDate(new Date()), Date.now()), RutinContent.TEXT.equippedToast);
+    if (action === 'reset-config') await mutate(async () => { await S.saveSettings({ oyunAyar: G.validateConfig(C.GAME_CONFIG) }); configDraft = null; }, RutinContent.COPY.copy095);
     if (action === 'simulate') await runSimulator('synthetic');
     if (action === 'replay') await runSimulator('replay');
     if (action === 'download') { await reload(); downloadBackup(); }
     if (action === 'share') await shareBackup(); // Keep the file share within the user gesture (iOS).
     if (action === 'import') $('#backup-file').click();
     if (action === 'persist') { await updateStorageStatus(true); toast(storageStatus); }
-    if (action === 'clear' && await confirmAction('Tüm veriyi sil?', 'Bu cihazdaki bütün alışkanlıklar, tikler, sezonlar, gün defteri ve eşyalar kalıcı olarak silinecek. Geri almak için JSON yedeğin gerekir.', 'Tüm veriyi sil')) {
-      if (await mutate(() => S.replaceAll(emptyState()), 'Bütün veriler silindi.')) { simResult = null; configDraft = null; page = 'boss'; render(); openCharacter(); }
+    if (action === 'clear' && await confirmAction(RutinContent.COPY.copy096, RutinContent.COPY.copy097, RutinContent.COPY.copy098)) {
+      if (await mutate(() => S.replaceAll(emptyState()), RutinContent.COPY.copy099)) { simResult = null; configDraft = null; page = 'boss'; render(); openCharacter(); }
     }
   });
   main.addEventListener('change', event => {
@@ -293,7 +314,9 @@
   });
   document.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', async () => {
     if (!initialized || busy || page === button.dataset.page) return;
-    page = button.dataset.page;
+    const target = button.dataset.page;
+    page = target === 'today' ? 'boss' : target === 'history' ? 'me' : target;
+    if (target === 'history') meTab = 'history';
     await reload();
     window.scrollTo({ top: 0, behavior: 'instant' });
     main.focus({ preventScroll: true });
@@ -303,7 +326,7 @@
     $('#update-button').disabled = true;
     registration.waiting.postMessage({ type: 'SKIP_WAITING' });
   });
-  window.addEventListener('rutin-db-blocked', () => toast('Diğer Kindleborn sekmelerini kapatıp bu sayfayı yeniden aç.'));
+  window.addEventListener('rutin-db-blocked', () => toast(RutinContent.COPY.copy100));
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState !== 'visible' || !initialized || busy) return;
     refreshDate();
@@ -312,7 +335,7 @@
   });
   setInterval(async () => {
     if (initialized && !busy && refreshDate()) {
-      try { await reload(); toast('Yeni gün başladı. Önceki gün deftere kapandı.'); }
+      try { await reload(); toast(RutinContent.COPY.copy101); }
       catch (error) { toast(errorMessage(error)); }
     }
   }, 1000);
@@ -320,15 +343,15 @@
   main.addEventListener('submit', async event => {
     if (event.target.id !== 'config-form') return;
     event.preventDefault();
-    try { const config = selectedConfig(); await mutate(async () => { await S.saveSettings({ oyunAyar: config }); configDraft = null; }, 'Ayarlar yalnız yeni sezonlara uygulanacak.'); }
+    try { const config = selectedConfig(); await mutate(async () => { await S.saveSettings({ oyunAyar: config }); configDraft = null; }, RutinContent.COPY.copy102); }
     catch (error) { toast(errorMessage(error)); }
   });
   $('#character-dialog').addEventListener('cancel', event => { if (!state.settings.karakterAdi || busy) event.preventDefault(); });
   $('#character-form').addEventListener('submit', async event => {
     event.preventDefault();
     const name = $('#character-name').value.trim();
-    if (!name) { $('#character-error').textContent = 'Bir karakter adı yaz.'; return; }
-    if (await mutate(() => S.saveSettings({ karakterAdi: name }), 'Karakterin hazır.')) $('#character-dialog').close();
+    if (!name) { $('#character-error').textContent = RutinContent.COPY.copy103; return; }
+    if (await mutate(() => S.saveSettings({ karakterAdi: name }), RutinContent.COPY.copy104)) $('#character-dialog').close();
   });
   $('#onboard-import').addEventListener('click', () => { $('#character-dialog').close(); page = 'settings'; render(); });
   window.addEventListener('resize', () => { if (initialized) V.mount(state, today, impact); });
@@ -345,7 +368,7 @@
       if (!state.settings.karakterAdi) openCharacter();
     } catch (error) {
       main.setAttribute('aria-busy', 'false');
-      main.innerHTML = `<div class="empty"><h1>Veriler açılamadı.</h1><p>${esc(errorMessage(error))}</p><p>Safari’nin normal modunda, HTTPS veya localhost üzerinden yeniden aç.</p><button type="button" class="primary wide" id="retry-open">Tekrar dene</button></div>`;
+      main.innerHTML = RutinContent.interpolate('app005', [esc(errorMessage(error))]);
       $('#retry-open').addEventListener('click', () => location.reload());
     }
     setupWorker();

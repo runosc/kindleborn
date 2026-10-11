@@ -174,3 +174,93 @@ main:focus, main:focus-visible { outline: none; }
 .habit-card .tick-button { width: 48px; height: 48px; min-width: 48px; min-height: 48px; align-self: center; }
 .habit-card .tick-button img { width: 36px !important; height: 36px !important; transform: none !important; }
 .toast { bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom)); }
+
+/* v1.2: a viewport shell with scrolling confined to each content area. */
+:root { --art-pixel: 3px; }
+html, body { height: 100%; overflow: hidden; }
+.app-shell { height: 100dvh; max-width: 390px; display: flex; flex-direction: column; padding: env(safe-area-inset-top) 0 calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+.app-header { flex: 0 0 63px; margin: 6px 12px; }
+#main { flex: 1; min-height: 0; padding: 0 12px; overflow: hidden; }
+#main.page-scroll { overflow-y: auto; overscroll-behavior: contain; }
+.bottom-nav { grid-template-columns: repeat(3,minmax(0,1fr)); max-width: 390px; }
+.battle-page { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+.battle-area { flex: 0 0 40%; display: flex; flex-direction: column; min-height: 0; }
+.battle-scene { flex: 1; min-height: 0; margin: 0; }
+.battle-hud { border: 0; border-image: none; background: #181425d9; padding: 3px; }
+.battle-hud .hero-meta { margin: 0; line-height: 12px; }
+.battle-hud .boss-heading { margin: 0; }
+.battle-hud .progress { height: 12px; }
+.battle-hud .bar-fill { height: 6px; }
+.battle-hud .boss-heading .eyebrow { display: block; font-size: 6px; line-height: 9px; }
+.battle-hud .boss-heading h1 { font-size: 9px; line-height: 15px; }
+.battle-footer { flex: 0 0 auto; border: 0; border-image: none; padding: 3px 0; margin: 0; }
+.battle-footer .field-note { display: block; font-size: 6px; line-height: 9px; margin: 0; }
+.boss-weakness { font-size: 7px; line-height: 15px; }
+.boss-weakness img { width: 24px !important; height: 24px !important; }
+.battle-summary { font-size: 10px; line-height: 15px; }
+.daily-area { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.daily-area .section-heading { margin: 0; flex-wrap: nowrap; min-height: 45px; gap: 3px; }
+.daily-area h2 { font-size: 9px; }
+.daily-area .text-button { font-size: 8px; padding: 0; }
+.daily-summary { flex: 0 0 21px; border: 0; border-image: none; margin: 0 0 6px; padding: 0; display: flex; justify-content: space-between; font-size: 8px; line-height: 21px; }
+.daily-summary .progress { display: none; }
+.habit-scroll { flex: 1; overflow-y: auto; min-height: 0; overscroll-behavior: contain; padding-bottom: 6px; }
+.habit-list { gap: 6px; }
+.hit-number { position: absolute; z-index: 3; right: 12px; bottom: 9px; color: var(--accent); background: var(--bg); padding: 3px; font-size: 15px; }
+.update-banner { flex: 0 0 auto; margin: 0; font-size: 8px; }
+
+/* The user chose compact 36px subtabs; item controls retain 84px targets. */
+.me-page { height: 100%; display: flex; flex-direction: column; min-height: 0; margin: 0 -12px; }
+.me-tabs { display: grid; grid-template-columns: repeat(3,1fr); flex: 0 0 36px; }
+.me-tabs button { min-height: 36px; height: 36px; padding: 3px; font-size: 9px; border-bottom: 3px solid var(--line); }
+.me-tabs button[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+.me-heading { flex: 0 0 45px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; gap: 6px; }
+.me-heading h1 { font-size: 12px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me-heading button { flex-shrink: 0; }
+.me-content { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 12px 6px; }
+.items-pane { padding: 0 0 6px; }
+.paper-doll { width: 360px; height: 288px; margin: auto; display: grid; grid-template-columns: 84px 192px 84px; align-items: center; }
+.slot-column { display: grid; gap: 6px; }
+.gear-slot, .inventory-cell { width: 84px; height: 84px; min-height: 84px; padding: 0; border: 0; display: grid; place-items: center; background: var(--ui_slot_v01) center / 84px 84px; }
+.gear-slot.is-equipped, .inventory-cell.is-equipped { background-image: var(--ui_slot_secili_v01); }
+.doll-character { height: 288px; }
+.doll-level { text-align: center; margin: 0; height: 21px; line-height: 21px; font-size: 9px; color: var(--accent); }
+.wallet-strip { width: 336px; margin: 3px auto 6px; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 6px; align-items: center; font-size: 8px; line-height: 21px; }
+.wallet-strip strong { display: flex; align-items: center; gap: 3px; color: var(--accent); }
+.inventory-grid { width: 354px; margin: auto; display: grid; grid-template-columns: repeat(4,84px); gap: 6px; }
+.inventory-cell { position: relative; }
+.inventory-cell .small-icon { position: absolute; bottom: 3px; right: 3px; }
+.inventory-cell.is-empty { opacity: .3; }
+.item-info { margin: 6px 12px 0; font-size: 8px; line-height: 21px; white-space: nowrap; overflow-x: auto; }
+.attributes-pane { padding: 6px 12px; min-height: 0; }
+.attributes-pane .stat-grid { gap: 6px; }
+.attributes-pane .stat-card { padding: 3px; border-width: 12px; }
+.attributes-pane .stat-card h3 { font-size: 8px; margin: 3px 0; }
+.attributes-pane .stat-card strong { margin: 3px 0; }
+.attributes-pane .stat-card small { margin-top: 3px; }
+.attributes-pane .level-label { font-size: 8px; margin: 6px 0; }
+.life-strip { display: grid; gap: 3px; font-size: 8px; }
+
+/* Compact heatmap: 6 art px cells, 1 art px gaps, weeks in columns. */
+.history-pane { height: 100%; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.history-pane h2 { margin: 0; font-size: 9px; line-height: 18px; }
+.calendar-legend { display: flex; gap: 3px; height: 18px; }
+.calendar { flex: 0 0 144px; width: 312px; display: grid; grid-template-rows: repeat(7,18px); grid-auto-flow: column; grid-auto-columns: 18px; gap: 3px; }
+.calendar-cell { width: 18px; height: 18px; min-width: 18px; min-height: 18px; padding: 0; border: 0; }
+.calendar-cell > span { position: relative; display: block; width: 18px; height: 18px; }
+.calendar-cell img { display: block; }
+.calendar-today { position: absolute; inset: 0; }
+.calendar-cell[aria-pressed="true"] { outline: 3px solid var(--accent); outline-offset: 0; }
+.calendar-cell:focus-visible { position: relative; z-index: 1; outline-offset: 0; }
+.day-detail { font-size: 8px; line-height: 18px; flex: 0 0 42px; min-width: 0; }
+.day-detail p { margin: 0; white-space: nowrap; overflow-x: auto; }
+.streak-list { flex: 1 1 90px; min-height: 60px; overflow-y: auto; overscroll-behavior: contain; }
+.streak-row { display: grid; grid-template-columns: 48px minmax(0,1fr); align-items: center; gap: 6px; min-height: 54px; font-size: 8px; border-bottom: 3px solid var(--panel-edge); }
+.streak-row span { overflow-wrap: anywhere; }
+.streak-row strong { display: block; color: var(--accent); }
+.streak-row small { display: flex; gap: 3px; align-items: center; font-size: 7px; }
+.season-list { flex: 0 1 102px; min-height: 36px; overflow-y: auto; font-size: 8px; overscroll-behavior: contain; }
+.season-list .history-week { margin: 0 0 6px; padding: 3px; border-width: 12px; }
+.habit-streak { position: relative; display: inline-flex; align-items: center; height: 12px; padding-left: 27px; color: var(--accent); font-size: 8px; }
+.habit-streak .small-icon { position: absolute; left: 0; top: -6px; width: 24px !important; height: 24px !important; }
+.habit-meta { flex-wrap: nowrap; }

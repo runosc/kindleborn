@@ -2,99 +2,126 @@
   'use strict';
   const C = root.RutinConfig, D = root.RutinDerive, G = root.RutinGame, content = root.RutinContent;
   const esc = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
-  const number = value => new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 1 }).format(value);
-  const format = value => new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'short' }).format(D.parseDate(value));
+  const number = content.number, format = content.formatDate, T = content.TEXT;
   const A = content.ASSETS;
-  const sprite = (path, cls = '', extra = '') => { const size = content.ART_SIZES[path] || [24, 24]; return `<img class="pixel ${cls}" src="${path}" data-art="${size[0]}" data-art-height="${size[1]}" alt="" aria-hidden="true" ${extra}>`; };
+  const sprite = (path, cls = '', extra = '') => { const size = content.ART_SIZES[path] || [24, 24]; return content.interpolate('views001', [cls, path, size[0], size[1], extra]); };
   const icon = key => sprite(A.ui[key], 'small-icon');
   const effect = (key, cls = '') => sprite(A.effects[key][0], `effect ${cls}`, `data-effect="${key}"`);
-  const bar = (value, maximum, label, kind = '') => `<div class="progress ${kind}" role="progressbar" aria-valuenow="${Math.max(0,value)}" aria-valuemin="0" aria-valuemax="${Math.max(1,maximum)}" aria-label="${esc(label)}" data-value="${value}" data-max="${maximum}"><span class="bar-fill"></span></div>`;
-  const badge = type => `<span class="badge">${sprite(A.types[type], 'type-icon')}<span>${esc(type)}</span></span>`;
+  const bar = (value, maximum, label, kind = '') => content.interpolate('views002', [kind, Math.max(0,value), Math.max(1,maximum), esc(label), value, maximum]);
+  const badge = type => content.interpolate('views003', [sprite(A.types[type], 'type-icon'), esc(content.TYPE_LABELS[type])]);
   const activeSeason = state => state.seasons.find(season => !season.sonuc);
   const activeHabits = (state, today) => state.habits.filter(habit => !habit.arsiv && habit.olusturma <= today);
-  function itemEffect(item, config) { return item.slot === 'kozmetik' ? item.etki : `${item.slot === 'kilic' ? 'Hasar' : 'Koruma'} +%${number(G.gearBonus(item, item.slot, config) * 100)}`; }
+  function itemEffect(item, config) { return item.slot === 'kozmetik' ? item.etki : `${item.slot === 'kilic' ? T.damage : T.protection} +%${number(G.gearBonus(item, item.slot, config) * 100)}`; }
   function habitCards(state, today, compact = false) {
     const season = activeSeason(state);
     const ended = season && G.evaluateSeason(state, season, today).result;
     return activeHabits(state, today).map(habit => {
       const tick = state.ticks.find(tick => tick.habitId === habit.id && tick.tarih === today);
       const locked = !state.settings.karakterAdi || state.gunler.some(day => day.tarih === today) || (tick && (!season || tick.ts < (season.baslangicTs || G.dayStart(season.baslangic)))) || (ended && ended.bitisTarihi < today);
-      const pips = Array.from({ length: 3 }, (_, index) => `<span class="difficulty-pip${index < habit.zorluk ? ' is-filled' : ''}" aria-hidden="true"></span>`).join('');
-      const body = `${sprite(A.types[habit.tur], 'type-icon')}<span class="habit-copy"><span class="habit-name">${esc(habit.ad)}</span><span class="habit-meta"><span class="habit-type">${esc(habit.tur)}</span><span class="difficulty" role="img" aria-label="${C.DIFFICULTIES[habit.zorluk]}">${pips}</span></span>${locked ? '<small class="habit-lock">Sezon kaydı kilitli</small>' : ''}</span>`;
-      const nameArea = compact ? `<div class="habit-main">${body}</div>` : `<button type="button" class="habit-main edit-habit" data-action="edit" data-id="${esc(habit.id)}" aria-label="${esc(habit.ad)} alışkanlığını düzenle">${body}</button>`;
-      return `<article class="habit-card ${tick ? 'is-done' : ''}">${nameArea}<button type="button" class="tick-button" data-action="tick" data-id="${esc(habit.id)}" aria-label="${esc(habit.ad)}: ${tick ? 'tiki geri al' : 'tik at'}" aria-pressed="${Boolean(tick)}" ${locked ? 'disabled' : ''}>${sprite(A.ui[tick ? 'ui_tik_dolu_v01' : 'ui_tik_bos_v01'])}</button></article>`;
+      const series = D.streak(habit, state.ticks, today);
+      const pips = Array.from({ length: 3 }, (_, index) => content.interpolate('views004', [index < habit.zorluk ? ' is-filled' : ''])).join('');
+      const body = content.interpolate('views005', [sprite(A.types[habit.tur], 'type-icon'), esc(habit.ad), esc(content.TYPE_LABELS[habit.tur]), content.DIFFICULTY_LABELS[habit.zorluk], pips, series.current ? content.interpolate('views006', [icon('ikon_alev_mini_v01'), number(series.current)]) : '', locked ? content.COPY.copy002 : '']);
+      const nameArea = compact ? content.interpolate('views007', [body]) : content.interpolate('views008', [esc(habit.id), esc(habit.ad), body]);
+      return content.interpolate('views009', [tick ? 'is-done' : '', nameArea, esc(habit.id), esc(habit.ad), tick ? content.COPY.copy003 : content.COPY.copy004, Boolean(tick), locked ? 'disabled' : '', sprite(A.ui[tick ? 'ui_tik_dolu_v01' : 'ui_tik_bos_v01'])]);
     }).join('');
   }
   function dailySummary(state, today) {
     const result = D.dayProgress(activeHabits(state, today), state.ticks, today, today);
-    return `<div class="daily-summary"><span>GÜNLÜK ADIMLAR</span><strong>${result.done}/${result.total}</strong>${bar(result.done, result.total, 'Günlük ilerleme')}</div>`;
+    return content.interpolate('views010', [T.daily, number(result.done), number(result.total), bar(result.done, result.total, content.COPY.copy005)]);
   }
-  function empty() { return '<div class="empty"><p class="eyebrow">BİR ADIMLA BAŞLA</p><h2>İlk alışkanlığını ekle.</h2><p>Sezonun, bir günlük alışkanlığın olduğunda başlar.</p><button type="button" class="primary wide" data-action="add">İlk alışkanlığını ekle</button></div>'; }
+  function empty() { return content.COPY.copy006; }
   function bossPage(state, today) {
     const season = activeSeason(state);
-    if (!state.settings.karakterAdi) return '<p class="eyebrow">KINDLEBORN</p><h1>Her gün bir adım.</h1><div class="empty"><p>Karakterini oluştur; günlük alışkanlıklarınla bosslara karşı ilerle.</p><button type="button" class="primary wide" data-action="rename">Karakterini oluştur</button><button type="button" class="secondary wide" data-action="settings">Yedek geri yükle</button></div>';
-    if (!season) return `<p class="eyebrow">${esc(state.settings.karakterAdi)} · MACERAN BAŞLIYOR</p><h1>Küçük adımlar.<br>Büyük mücadele.</h1>${empty()}`;
+    if (!state.settings.karakterAdi) return content.COPY.copy007;
+    if (!season) return content.interpolate('views011', [esc(state.settings.karakterAdi), empty()]);
     const play = G.evaluateSeason(state, season, today);
     const last = play.curve.filter(row => row.kapali).at(-1);
     const live = play.curve.find(row => !row.kapali);
     const attributes = G.stats(state, today, season.ayar);
-    let html = `<section class="battle-scene"><canvas id="boss-canvas" aria-hidden="true"></canvas><div class="battle-hud"><div class="hero-meta"><span>${esc(state.settings.karakterAdi)} · SV. ${attributes.seviye}</span><strong>${number(play.hp)}/${number(play.maxHp)} ${icon('ikon_kalp_v01')} CAN</strong></div>${bar(play.hp, play.maxHp, 'Karakter canı', 'hp-bar')}
-      <div class="boss-heading"><p class="eyebrow">SEZON ${season.sira + 1} · GÜN ${play.gun}</p><h1>${esc(play.boss.ad)}</h1><div class="boss-details"><span>Boss canı</span><span>${number(play.bossHp)} / ${number(season.bossCan0)}</span></div></div>${bar(play.bossHp, season.bossCan0, 'Boss canı', 'boss-bar')}
-      </div></section><div class="battle-footer"><p class="boss-weakness">Zayıf tür ${badge(play.boss.zayifTur)}</p>
-      ${last && last.canKazanci > 0 ? effect('heal', 'heal-effect') : ''}<p class="battle-summary">Bugün ${number(live ? live.hasar : 0)} hasar, +${number(last ? last.iyilesme : 0)} iyileşti, +${number(last ? last.canKazanci : 0)} can</p><p class="field-note center">İyileşme ve can kazancı kapanmış son günden. Bugün yalnız hasar canlıdır.</p></div>`;
+    let html = content.interpolate('views012', [T.hit, esc(state.settings.karakterAdi), number(attributes.seviye), number(play.hp), number(play.maxHp), icon('ikon_kalp_v01'), bar(play.hp, play.maxHp, content.COPY.copy008, 'hp-bar'), number(season.sira + 1), number(play.gun), esc(play.boss.ad), number(play.bossHp), number(season.bossCan0), bar(play.bossHp, season.bossCan0, content.COPY.copy009, 'boss-bar'), badge(play.boss.zayifTur), last && last.canKazanci > 0 ? effect('heal', 'heal-effect') : '', number(live ? live.hasar : 0), number(last ? last.iyilesme : 0), number(last ? last.canKazanci : 0)]);
+    let resultHtml = "";
     if (play.result) {
-      html += `<section class="result-card" role="status"><div class="result-banner">${sprite(A.ui[play.result.durum === 'yenildi' ? 'kurdele_zafer_v01' : 'kurdele_yenilgi_v01'], 'result-ribbon')}<h2>${play.result.durum === 'yenildi' ? 'Bossu yendin!' : 'Bu kez düştün.'}</h2></div><p class="eyebrow">SEZON SONUCU</p>${sprite(play.boss.portre, 'portrait')}<div class="result-effects">${play.result.durum === 'yenildi' ? effect('death') + effect('confetti') : icon('ikon_kafatasi_v01')}</div>${sprite(A.rewards.closed, 'chest')}<p>${play.result.gun}. gün · ${format(play.result.bitisTarihi)}</p><div class="reward-grid"><span>${sprite(A.rewards.gold)} ALTIN<strong>+${play.result.altin}</strong></span><span>${icon('ikon_xp_v01')} XP<strong>+${play.result.xp}</strong></span></div>${play.result.zekaBonus ? `<p>Zeka bonusu: %${number(play.result.zekaBonus * 100)}</p>` : ''}<p class="field-note">Ödül, sezonu kapattığında bakiyene eklenir. Sonraki sezon tam canla başlar.</p><button type="button" class="primary wide" data-action="close-season">Sezonu kapat</button></section>`;
+      resultHtml = content.interpolate('views013', [sprite(A.ui[play.result.durum === 'yenildi' ? 'kurdele_zafer_v01' : 'kurdele_yenilgi_v01'], 'result-ribbon'), play.result.durum === 'yenildi' ? content.COPY.copy010 : content.COPY.copy011, sprite(play.boss.portre, 'portrait'), play.result.durum === 'yenildi' ? effect('death') + effect('confetti') : icon('ikon_kafatasi_v01'), sprite(A.rewards.closed, 'chest'), number(play.result.gun), format(play.result.bitisTarihi), sprite(A.rewards.gold), number(play.result.altin), icon('ikon_xp_v01'), number(play.result.xp), play.result.zekaBonus ? content.interpolate('views014', [number(play.result.zekaBonus * 100)]) : '']);
     }
-    html += dailySummary(state, today);
-    if (activeHabits(state, today).length) html += `<div class="section-heading"><h2>Bugünün vuruşları</h2><button type="button" class="text-button" data-action="today-page">Tümü ›</button></div><div class="habit-list compact">${habitCards(state, today, true)}</div>`;
-    else html += '<p class="field-note">Aktif alışkanlığın yok. Bugün ekranından ekleyebilirsin.</p><button type="button" class="secondary wide" data-action="add">Alışkanlık ekle</button>';
+    html += content.COPY.copy012;
+    html += content.interpolate('views015', [T.todayHits, T.addHabit, dailySummary(state, today), resultHtml, habitCards(state, today)]);
     return html;
   }
-  function todayPage(state, today) {
-    return `<p class="eyebrow">${format(today)} · BUGÜN</p><h1>Bugünün adımları.</h1><p class="subtitle">Gün 00:00’da kapanır. Geçmiş günler değişmez.</p>${activeHabits(state, today).length ? `${dailySummary(state, today)}<div class="habit-list">${habitCards(state, today)}</div><button type="button" class="primary wide add-habit" data-action="add">+ Yeni alışkanlık</button>` : empty()}<p class="footnote">Kaçınma alışkanlıklarında tik, “bugün yapmadım” demektir.</p>`;
-  }
-  function mePage(state, today) {
+  // Compatibility entry point: old today links now display the battle screen.
+  const todayPage = bossPage;
+  function mePage(state, today, status = {}) {
+    const tab = status.meTab || 'items';
     const season = activeSeason(state), config = season ? season.ayar : state.settings.oyunAyar;
-    const attributes = G.stats(state, today, config);
-    const play = season && G.evaluateSeason(state, season, today);
+    const attributes = G.stats(state, today, config), play = season && G.evaluateSeason(state, season, today);
+    const hp = play ? play.hp : G.maxHp(attributes, config), maxHp = play ? play.maxHp : G.maxHp(attributes, config);
     const gear = G.equipmentAt(state.equips, G.dayEnd(today));
-    return `<p class="eyebrow">SENİN MACERAN</p><div class="section-heading"><h1>${esc(state.settings.karakterAdi || 'Yolcu')}</h1><button type="button" class="secondary" data-action="rename">Adı düzenle</button></div><div class="character-panel">${sprite(A.character, 'character-sprite')}<div><p class="level-label">SEVİYE ${attributes.seviye}</p><p>${number(attributes.xp)} toplam XP</p>${bar(attributes.kalan, attributes.esik, 'Karakter XP')}<small>${number(attributes.kalan)}/${number(attributes.esik)} · sonraki seviye</small></div></div><div class="settings-card"><div class="hero-meta"><span>CAN</span><strong>${number(play ? play.hp : G.maxHp(attributes, config))}/${number(play ? play.maxHp : G.maxHp(attributes, config))}</strong></div>${bar(play ? play.hp : G.maxHp(attributes, config), play ? play.maxHp : G.maxHp(attributes, config), 'Can', 'hp-bar')}</div>
-      <h2>Özelliklerin</h2><div class="stat-grid">${C.TYPES.map((type, i) => { const stat = attributes.turler[type]; return `<section class="stat-card">${sprite(A.types[type], 'type-icon')}<h3>${type}</h3><strong>SV. ${stat.seviye}</strong>${bar(stat.kalan, stat.esik, type + ' XP')}<small>${number(stat.kalan)}/${number(stat.esik)} XP</small></section>`; }).join('')}</div>
-      <h2 class="spaced">Kuşandıkların</h2><div class="equipment-grid">${Object.entries(content.SLOTS).map(([slot, label]) => `<section class="slot-card"><h3>${label}</h3><div class="equipment-slot ${gear[slot] ? 'is-equipped' : ''}">${sprite(gear[slot] ? gear[slot].sprite : A.ui[slot === 'kilic' ? 'slot_bos_kilic_v01' : slot === 'zirh' ? 'slot_bos_zirh_v01' : 'slot_bos_kozmetik_v01'])}</div>${gear[slot] ? `<strong>${gear[slot].ad}</strong><p>${icon('ikon_onay_v01')} ${itemEffect(gear[slot], config)}</p>` : '<p>Boş slot</p>'}</section>`).join('')}</div><p class="field-note">Ekipman slotlarda görünür. Kozmetikler şimdilik yalnız görünüm içindir.</p>`;
+    const tabs = content.interpolate('views016', [T.me, ['items','stats','history'].map(key => content.interpolate('views017', [key, key === tab, T[key]])).join('')]);
+    const heading = content.interpolate('views018', [esc(state.settings.karakterAdi || T.traveler), T.rename]);
+    const life = content.interpolate('views019', [T.hp, number(hp), number(maxHp), bar(hp,maxHp,T.hp,'hp-bar')]);
+    let body;
+    if (tab === 'stats') {
+      body = content.interpolate('views020', [life, T.level, number(attributes.seviye), number(attributes.xp), T.totalXp, C.TYPES.map(type => { const stat = attributes.turler[type]; return content.interpolate('views021', [sprite(A.types[type], 'type-icon'), content.TYPE_LABELS[type], T.level, number(stat.seviye), bar(stat.kalan,stat.esik,content.TYPE_LABELS[type] + ' ' + T.xp), number(stat.kalan), number(stat.esik), T.xp]); }).join('')]);
+    } else if (tab === 'history') {
+      body = content.interpolate('views022', [historyPage(state,today,status)]);
+    } else {
+      const slot = key => {
+        const item = gear[key], label = content.SLOTS[key];
+        const aria = item ? `${label}: ${item.ad}, ${T.equipped}. ${T.unequipTouch}` : `${label} ${T.slot}: ${T.emptySlot}`;
+        return content.interpolate('views023', [item ? ' is-equipped' : '', key, item ? item.id : '', esc(aria), sprite(item ? item.sprite : A.ui[key === 'kilic' ? 'slot_bos_kilic_v01' : key === 'zirh' ? 'slot_bos_zirh_v01' : 'slot_bos_kozmetik_v01'])]);
+      };
+      const owned = content.ITEMS.filter(item => state.purchases.some(p => p.itemId === item.id)).sort((a,b) => ['kilic','zirh','kozmetik'].indexOf(a.slot) - ['kilic','zirh','kozmetik'].indexOf(b.slot) || a.kademe - b.kademe);
+      const cells = Array.from({length:Math.max(12,owned.length)},(_,i) => {
+        const item = owned[i];
+        if (!item) return content.interpolate('views024', [T.emptyInventory]);
+        const equipped = gear[G.slotFor(item)]?.id === item.id;
+        return content.interpolate('views025', [equipped ? ' is-equipped' : '', item.id, esc(item.ad), equipped ? T.unequipTouch : T.equipTouch, sprite(item.sprite), equipped ? icon('ikon_onay_v01') : '']);
+      }).join('');
+      const lastItem = content.ITEMS.find(item => item.id === status.lastItemId);
+      body = content.interpolate('views026', [['tac','kolye','yuzuk'].map(slot).join(''), sprite(A.character,'character-sprite'), ['kilic','zirh','pelerin'].map(slot).join(''), T.level, number(attributes.seviye), T.xp, number(attributes.kalan), number(attributes.esik), bar(attributes.kalan,attributes.esik,T.xp), icon('ikon_altin_v01'), number(G.balance(state)), T.inventory, cells, lastItem ? esc(lastItem.ad) + content.COPY.copy013 + itemEffect(lastItem,config) : T.lastItem]);
+    }
+    return content.interpolate('views027', [tabs, heading, body]);
   }
   function shopPage(state, today) {
     const season = activeSeason(state), config = season ? season.ayar : state.settings.oyunAyar;
     const gear = G.equipmentAt(state.equips, G.dayEnd(today)), gold = G.balance(state);
-    return `<p class="eyebrow">DÜKKAN</p><h1>Küçük bir hazırlık.</h1><div class="gold-wallet"><span>ALTININ</span><strong>${icon('ikon_altin_v01')} ${number(gold)}</strong></div><p class="field-note">Altın yalnız kapatılan sezonların ödüllerinden gelir.</p><div class="shop-grid">${content.ITEMS.map(item => {
+    return content.interpolate('views028', [icon('ikon_altin_v01'), number(gold), content.ITEMS.map(item => {
       const owned = state.purchases.some(purchase => purchase.itemId === item.id);
       const equipped = gear[G.slotFor(item)] && gear[G.slotFor(item)].id === item.id;
-      return `<article class="shop-item"><img class="pixel item-sprite" data-art="24" src="${item.sprite}" alt="${item.ad}"><p class="eyebrow">${item.slot === 'kozmetik' ? 'KOZMETİK' : `KADEME ${item.kademe}`}</p><h2>${item.ad}</h2><p>${itemEffect(item, config)}</p><strong class="item-price">${icon('ikon_altin_v01')} ${item.fiyat}</strong><button type="button" class="${owned ? 'secondary' : 'primary'} wide" data-action="${owned ? 'equip' : 'buy'}" data-id="${item.id}" aria-label="${item.ad}: ${owned ? equipped ? 'kuşanıldı' : 'kuşan' : 'satın al'}" ${equipped || (!owned && gold < item.fiyat) ? 'disabled' : ''}>${icon(owned ? 'ikon_onay_v01' : 'ikon_kilit_v01')} ${owned ? equipped ? 'Kuşanıldı' : 'Kuşan' : 'Satın al'}</button></article>`;
-    }).join('')}</div>`;
+      return content.interpolate('views029', [item.sprite, item.ad, item.slot === 'kozmetik' ? content.COPY.copy014 : content.tierLabel(item.kademe), item.ad, itemEffect(item, config), icon('ikon_altin_v01'), number(item.fiyat), owned ? 'secondary' : 'primary', owned ? 'equip' : 'buy', item.id, item.ad, owned ? equipped ? content.COPY.copy015 : content.COPY.copy016 : content.COPY.copy017, equipped || (!owned && gold < item.fiyat) ? 'disabled' : '', icon(owned ? 'ikon_onay_v01' : 'ikon_kilit_v01'), owned ? equipped ? content.COPY.copy018 : content.COPY.copy019 : content.COPY.copy020]);
+    }).join('')]);
   }
-  function historyPage(state, today) {
-    const completed = state.seasons.filter(season => season.sonuc).sort((a, b) => b.sira - a.sira);
-    const habits = state.habits.map(habit => ({ ...habit, haftalikHedef: 7 }));
-    const ticks = state.ticks.map(tick => ({ ...tick, snapshot: { ...tick.snapshot, haftalikHedef: 7 } }));
-    return `<p class="eyebrow">DEĞİŞMEYEN ADIMLAR</p><h1>Geçmişin.</h1><h2>Sezon defteri</h2>${completed.length ? completed.map(season => `<section class="history-week"><div class="section-heading"><h3>${sprite(content.BOSSES.find(b => b.id === season.bossId).portre, 'portrait')} ${esc(content.BOSSES.find(b => b.id === season.bossId).ad)}</h3><span class="badge">${season.sonuc.durum === 'yenildi' ? 'Yendin' : 'Öldün'}</span></div><p>${format(season.baslangic)} → ${format(season.sonuc.bitisTarihi)} · ${season.sonuc.gun} gün</p><p>${sprite(A.rewards.open, 'chest')} ${icon('ikon_altin_v01')} ${season.sonuc.altin} altın · +${season.sonuc.xp} XP</p></section>`).join('') : '<p class="subtitle">İlk sezonun sonucu burada yerini alacak.</p>'}<h2 class="spaced">Son 8 hafta</h2><p class="field-note">Günlük alışkanlıklar için k/7. v0 tikleri ve snapshot’ları depoda korunur.</p>${habits.length ? D.historyWeeks(habits, ticks, today).map((week, index) => `<section class="history-week"><h3>${index === 0 ? 'Bu hafta' : format(week.start) + ' haftası'}</h3><p class="week-caption">${format(week.start)} – ${format(week.end)}</p>${week.habits.map(row => `<div class="history-row"><div class="history-row-head"><span class="history-row-name">${esc(row.habit.ad)} ${row.habit.arsiv ? '<small>Arşiv</small>' : ''}</span><span class="history-score">${row.available ? `${row.count}/7 · %${row.percent}` : '—'}</span></div>${row.available ? bar(row.count, 7, row.habit.ad + ' haftalık ilerleme') : ''}</div>`).join('')}</section>`).join('') : '<p>Henüz alışkanlık yok.</p>'}<h2 class="spaced">Kapanmış günler</h2>${state.gunler.length ? `<div class="table-scroll"><table><thead><tr><th>Gün</th><th>Puan</th><th>Kaçan</th><th>Tik</th></tr></thead><tbody>${state.gunler.slice().sort((a, b) => b.tarih.localeCompare(a.tarih)).slice(0, 56).map(row => `<tr><td>${format(row.tarih)} ${row.mukemmel ? '★' : ''}</td><td>${number(row.yapilan)}/${number(row.potansiyel)}</td><td>${number(row.kacirilan)}</td><td>${row.tikSayisi}</td></tr>`).join('')}</tbody></table></div>` : '<p class="field-note">İlk gün yerel 00:00’da kapanır.</p>'}`;
+  function historyPage(state, today, status = {}) {
+    const selected = status.historyDate && status.historyDate <= today ? status.historyDate : today;
+    const eligible = date => state.habits.filter(h => h.olusturma <= date);
+    const start = D.addDays(D.weekStart(today), -14 * 7);
+    const cells = Array.from({length:105},(_,i) => {
+      const date = D.addDays(start,i);
+      if (date > today) return '';
+      const progress = D.dayProgress(eligible(date),state.ticks,date,today), level = D.calendarLevel(progress.percent,progress.total);
+      const aria = content.interpolate('views030', [format(date), number(progress.done), number(progress.total), T.habits]);
+      return content.interpolate('views031', [date, esc(aria), selected === date, sprite(A.ui['ui_takvim_hucre_' + level + '_v01']), date === today ? sprite(A.ui.ui_takvim_bugun_v01,'calendar-today') : '']);
+    }).join('');
+    const progress = D.dayProgress(eligible(selected),state.ticks,selected,today);
+    const done = state.habits.filter(h => state.ticks.some(t => t.habitId === h.id && t.tarih === selected)).map(h => h.ad);
+    const series = activeHabits(state,today).map(habit => ({habit,...D.streak(habit,state.ticks,today)})).sort((a,b) => b.current-a.current || b.best-a.best || content.compareNames(a.habit.ad,b.habit.ad));
+    const completed = state.seasons.filter(s => s.sonuc).sort((a,b) => b.sira-a.sira);
+    return content.interpolate('views032', [T.calendar, T.calendarLegend, Array.from({length:5},(_,i) => sprite(A.ui['ui_takvim_hucre_' + i + '_v01'])).join(''), T.calendar, cells, format(selected), number(progress.done), number(progress.total), T.habits, done.length ? done.map(esc).join(content.COPY.copy013) : T.noCompleted, T.streaks, series.length ? series.map(row => content.interpolate('views033', [icon(row.current ? 'ikon_alev_v01' : 'ikon_alev_sonuk_v01'), esc(row.habit.ad), number(row.current), T.days, row.best > row.current ? content.interpolate('views034', [icon('ikon_kupa_v01'), T.best, number(row.best), T.days]) : ''])).join('') : content.interpolate('views035', [T.noHabits]), T.seasons, completed.length ? completed.map(season => { const boss = content.BOSSES.find(b => b.id === season.bossId); return content.interpolate('views036', [sprite(boss.portre,'portrait'), esc(boss.ad), season.sonuc.durum === 'yenildi' ? T.won : T.died, format(season.baslangic), format(season.sonuc.bitisTarihi), number(season.sonuc.gun), T.days, sprite(A.rewards.open,'chest'), icon('ikon_altin_v01'), number(season.sonuc.altin), T.gold, number(season.sonuc.xp), T.xp]); }).join('') : content.interpolate('views037', [T.noSeasons])]);
   }
   const labels = {
-    puanCarpani: 'Zorluk başına puan', sezonGunu: 'Hedef sezon günü', bossCanKatsayisi: 'Boss can katsayısı', zayifTurCarpani: 'Zayıf tür çarpanı', gunlukVurus: 'Günlük ortalama vuruş', rMin: 'r alt sınırı', rMax: 'r üst sınırı', iyilesmeOrani: 'Boss iyileşme oranı', haftalikIyilesmeTavani: 'Haftalık iyileşme tavanı', zaferOlcegi: 'Zafer sonrası ölçek', olumOlcegi: 'Ölüm sonrası ölçek', tabanCan: 'Taban can', dayaniklilikCan: 'Dayanıklılık başına can', mukemmelCan: 'Mükemmel gün canı', odakCan: 'Odak başına can', altinOdulu: 'Zafer temel altını', zaferXp: 'Zafer XP', olumAltinOrani: 'Ölüm altın oranı', zekaAltin: 'Zeka altın bonusu', zekaTavan: 'Zeka bonus tavanı', seviyeTaban: 'İlk seviye eşiği', seviyeArtis: 'Seviye eşiği artışı'
+    puanCarpani: content.COPY.copy021, sezonGunu: content.COPY.copy022, bossCanKatsayisi: content.COPY.copy023, zayifTurCarpani: content.COPY.copy024, gunlukVurus: content.COPY.copy025, rMin: content.COPY.copy026, rMax: content.COPY.copy027, iyilesmeOrani: content.COPY.copy028, haftalikIyilesmeTavani: content.COPY.copy029, zaferOlcegi: content.COPY.copy030, olumOlcegi: content.COPY.copy031, tabanCan: content.COPY.copy032, dayaniklilikCan: content.COPY.copy033, mukemmelCan: content.COPY.copy034, odakCan: content.COPY.copy035, altinOdulu: content.COPY.copy036, zaferXp: content.COPY.copy037, olumAltinOrani: content.COPY.copy038, zekaAltin: content.COPY.copy039, zekaTavan: content.COPY.copy040, seviyeTaban: content.COPY.copy041, seviyeArtis: content.COPY.copy042
   };
   function simulatorResult(simulation) {
     if (!simulation) return '';
-    if (simulation.winRate !== undefined) return `<div class="settings-card" role="status"><h3>1000 sezon · aynı tohum</h3><p>Yenme: %${number(simulation.winRate * 100)} (${simulation.wins})<br>Ölüm: ${simulation.deaths}<br>${simulation.maxDays} günde hâlâ süren: ${simulation.ongoing}</p><p>Ortalama yenme günü: ${simulation.averageWinDay === null ? '—' : number(simulation.averageWinDay)}<br>Ortalama ölme günü: ${simulation.averageDeathDay === null ? '—' : number(simulation.averageDeathDay)}</p></div>`;
+    if (simulation.winRate !== undefined) return content.interpolate('views038', [number(simulation.winRate * 100), simulation.wins, simulation.deaths, simulation.maxDays, simulation.ongoing, simulation.averageWinDay === null ? content.COPY.copy043 : number(simulation.averageWinDay), simulation.averageDeathDay === null ? content.COPY.copy043 : number(simulation.averageDeathDay)]);
     const rows = simulation.curve;
     const maximum = Math.max(1, ...rows.map(row => Math.max(row.boss, row.azamiCan)));
     const points = key => rows.map((row, i) => `${Math.round(8 + i / Math.max(1, rows.length - 1) * 264)},${Math.round(110 - row[key] / maximum * 100)}`).join(' ');
-    return `<section class="settings-card"><h3>Geçmiş yeniden oynatımı</h3><p>${simulation.result ? `${simulation.result.durum === 'yenildi' ? 'Yenme' : 'Ölüm'} · ${simulation.result.gun}. gün` : 'Sezon sürüyor'}</p><svg class="replay-chart" viewBox="0 0 280 120" role="img" aria-label="Gün gün boss canı (kırmızı) ve karakter canı (yeşil)"><polyline points="${points('boss')}" class="chart-boss"/><polyline points="${points('can')}" class="chart-hp"/></svg><p class="field-note">Kırmızı: boss · Yeşil: karakter</p><div class="table-scroll"><table><thead><tr><th>Gün</th><th>Boss</th><th>Can</th></tr></thead><tbody>${rows.map(row => `<tr><td>${row.gun}</td><td>${number(row.boss)}</td><td>${number(row.can)}</td></tr>`).join('')}</tbody></table></div></section>`;
+    return content.interpolate('views039', [simulation.result ? content.interpolate('views040', [simulation.result.durum === 'yenildi' ? content.replayWin : content.COPY.copy044, simulation.result.gun]) : content.COPY.copy045, points('boss'), points('can'), rows.map(row => content.interpolate('views041', [row.gun, number(row.boss), number(row.can)])).join('')]);
   }
   function settingsPage(state, today, status) {
     const archived = state.habits.filter(habit => habit.arsiv), config = status.configDraft || state.settings.oyunAyar;
     const inputs = status.simInputs;
-    return `<p class="eyebrow">KONTROL SENDE</p><h1>Ayarlar.</h1><section class="settings-card"><h2>Yedekleme</h2><p>Verilerin yalnız bu cihazda. Düzenli yedek al.</p><button type="button" class="primary wide" data-action="download">JSON yedeğini indir</button><button type="button" class="secondary wide" data-action="share">Yedeği paylaş</button><button type="button" class="secondary wide" data-action="import">JSON’dan geri yükle</button><input type="file" id="backup-file" accept=".json,application/json" hidden><p class="field-note">Geri yükleme bütün alışkanlık, tik, sezon, gün defteri ve eşya verilerini değiştirir. v0 yedekleri de kabul edilir.</p></section>
-      <section class="settings-card"><h2>Cihazda saklama</h2><p class="storage-status">${esc(status.storageStatus)}</p><button type="button" class="secondary wide" data-action="persist">Kalıcı depolama iste</button><p class="field-note">${esc(status.offlineStatus)}</p></section><section class="settings-card"><h2>Arşiv (${archived.length})</h2>${archived.length ? archived.map(habit => `<div class="archive-row"><span>${esc(habit.ad)}</span><button class="secondary" type="button" data-action="edit" data-id="${esc(habit.id)}">Düzenle</button></div>`).join('') : '<p>Arşiv henüz boş.</p>'}</section>
-      <details class="developer" id="developer" ${status.devOpen ? 'open' : ''}><summary>Geliştirici · denge ve simülatör</summary><p class="field-note">Bu bölüm güvenlik sınırı değildir. Değişiklikler yalnız yeni sezonlara uygulanır; süren sezon kendi ayarlarını kullanır.</p><form id="config-form"><div class="config-grid">${Object.entries(G.CONFIG_RULES).map(([key, [min, max]]) => `<label>${labels[key]}<input name="${key}" aria-label="${labels[key]}" type="number" min="${min}" max="${max}" step="any" value="${config[key]}" required></label>`).join('')}</div>${['kilicBonuslari', 'zirhBonuslari'].map(key => `<label>${key === 'kilicBonuslari' ? 'Kılıç' : 'Zırh'} bonusları (Tahta, Demir, Çelik)<input name="${key}" value="${config[key].join(', ')}" aria-label="${key}" required></label>`).join('')}<button class="primary wide" type="submit">Yeni sezon ayarlarını kaydet</button><button class="secondary wide" type="button" data-action="reset-config">Varsayılana dön</button></form><h2 class="spaced">Simülatör</h2><label for="consistency">Tutarlılık (%)</label><input id="consistency" type="number" min="0" max="100" value="${inputs.consistency}"><label for="sim-seed">Sabit tohum</label><input id="sim-seed" maxlength="80" value="${esc(inputs.seed)}"><p class="field-note">5 günlük alışkanlık, N=1000; en fazla 90 gün. Bitmeyen sezonlar ayrıca sayılır. Formdaki seçili ayarı kullanır, oyuncu verisine yazmaz.</p><button class="secondary wide" type="button" data-action="simulate" ${status.simBusy ? 'disabled' : ''}>${status.simBusy ? 'Hesaplanıyor…' : '1000 sezonu simüle et'}</button><label for="replay-season">Gerçek geçmiş</label><select id="replay-season">${state.seasons.slice().sort((a, b) => b.sira - a.sira).map(season => `<option value="${esc(season.id)}" ${inputs.seasonId === season.id ? 'selected' : ''}>Sezon ${season.sira + 1} · ${content.BOSSES.find(b => b.id === season.bossId).ad}</option>`).join('')}</select><button class="secondary wide" type="button" data-action="replay" ${!state.seasons.length || status.simBusy ? 'disabled' : ''}>Seçili sezonu yeniden oynat</button><div id="sim-result">${simulatorResult(status.simResult)}</div></details>
-      <section class="settings-card"><h2>Ana ekranından kullan</h2><p>Safari → Paylaş → Ana Ekrana Ekle. İlk alışkanlık ve tikini ana ekran ikonundan oluştur. Her zaman aynı yerden aç.</p></section><div class="version"><span>Kindleborn v${C.VERSION}</span><span>Şema ${C.SCHEMA_VERSION}</span></div><button type="button" class="danger-text wide" data-action="clear">Tüm veriyi kalıcı olarak sil</button>`;
+    return content.interpolate('views042', [esc(status.storageStatus), esc(status.offlineStatus), archived.length, archived.length ? archived.map(habit => content.interpolate('views043', [esc(habit.ad), esc(habit.id)])).join('') : content.COPY.copy046, status.devOpen ? 'open' : '', Object.entries(G.CONFIG_RULES).map(([key, [min, max]]) => content.interpolate('views044', [labels[key], key, labels[key], min, max, config[key]])).join(''), ['kilicBonuslari', 'zirhBonuslari'].map(key => content.interpolate('views045', [key === 'kilicBonuslari' ? content.COPY.copy047 : content.COPY.copy048, key, config[key].join(', '), key])).join(''), inputs.consistency, esc(inputs.seed), status.simBusy ? 'disabled' : '', status.simBusy ? content.COPY.copy049 : content.COPY.copy050, state.seasons.slice().sort((a, b) => b.sira - a.sira).map(season => content.interpolate('views046', [esc(season.id), inputs.seasonId === season.id ? 'selected' : '', season.sira + 1, content.BOSSES.find(b => b.id === season.bossId).ad])).join(''), !state.seasons.length || status.simBusy ? 'disabled' : '', simulatorResult(status.simResult), C.VERSION, C.SCHEMA_VERSION]);
   }
   const images = new Map();
   function load(path, redraw) {
@@ -104,14 +131,8 @@
     return image;
   }
   function align(element) {
+    // CSS now uses a fixed integer art scale. Never scale CSS overrides twice.
     element.style.transform = '';
-    const dpr = root.devicePixelRatio || 1, rect = element.getBoundingClientRect();
-    // CSS layout rounds lengths to 1/64 px. Correct that rounding at fractional DPR
-    // so both the origin and the final bitmap dimensions land on device pixels.
-    const width = element.tagName === 'CANVAS' ? element.width / dpr : parseFloat(element.style.width);
-    const height = element.tagName === 'CANVAS' ? element.height / dpr : parseFloat(element.style.height);
-    element.style.transformOrigin = '0 0';
-    element.style.transform = `translate(${(Math.round(rect.left * dpr) - rect.left * dpr) / dpr}px, ${(Math.round(rect.top * dpr) - rect.top * dpr) / dpr}px) scale(${width / rect.width}, ${height / rect.height})`;
   }
   const frame = (paths, elapsed) => paths[Math.min(paths.length - 1, Math.floor(elapsed / 80))];
   // Scrolling at fractional DPR can shift an otherwise aligned origin off the device grid.
@@ -124,10 +145,13 @@
     root.cancelAnimationFrame(animationId);
     const id = ++mountId, main = document.querySelector('#main');
     const dpr = root.devicePixelRatio || 1;
-    const scale = Math.max(1, Math.floor(main.clientWidth * dpr / 120)), pixel = scale / dpr;
+    const pixel = 3, scale = pixel * dpr;
     document.documentElement.style.setProperty('--art-pixel', `${pixel}px`);
     document.documentElement.style.setProperty('--art-scale', scale);
+    const area = main.querySelector('.battle-area');
+    if (area) area.style.flexBasis = `${Math.floor(main.clientHeight * .4 / 3) * 3}px`;
     Object.entries(A.ui).forEach(([key, path]) => document.documentElement.style.setProperty(`--${key}`, `url("${path}")`));
+    main.querySelectorAll('button:not([aria-label])').forEach(button => button.setAttribute('aria-label', button.textContent.trim()));
     document.querySelectorAll('[data-asset]').forEach(image => {
       image.src = image.dataset.asset.split('.').reduce((v, k) => v[k], A);
       const size = content.ART_SIZES[image.getAttribute('src')];
@@ -148,7 +172,7 @@
     const hurt = play && previousHp !== null && previousDay !== today && play.hp < previousHp;
     if (hurt && canvas) {
       const image = document.createElement('img');
-      image.className = 'pixel effect hurt-effect'; image.dataset.effect = 'hurt'; image.setAttribute('aria-hidden', 'true'); image.alt = '';
+      image.className = content.COPY.copy051; image.dataset.effect = 'hurt'; image.setAttribute('aria-hidden', 'true'); image.alt = '';
       image.style.width = image.style.height = `${32 * pixel}px`; canvas.parentElement.append(image);
     }
     previousDay = today; previousHp = play ? play.hp : null;
@@ -161,12 +185,9 @@
         image.src = frame(A.effects[image.dataset.effect], reduced ? 0 : elapsed);
       });
       if (canvas && play) {
-        const header = document.querySelector('.app-header').getBoundingClientRect().height;
-        const nav = document.querySelector('.bottom-nav').getBoundingClientRect().height;
-        const height = Math.max(146, Math.floor((root.innerHeight - header - nav - 24) / pixel));
-        canvas.width = 120 * scale; canvas.height = height * scale;
-        canvas.style.width = `${canvas.width / dpr}px`; canvas.style.height = `${canvas.height / dpr}px`;
-        canvas.parentElement.style.height = canvas.style.height;
+        const height = Math.max(1, Math.floor(canvas.parentElement.clientHeight / pixel));
+        canvas.width = Math.round(120 * scale); canvas.height = Math.round(height * scale);
+        canvas.style.width = '360px'; canvas.style.height = `${height * pixel}px`;
         const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = false;
         ctx.scale(scale, scale);
         const redraw = () => { if (id === mountId && canvas.isConnected) paint(); };
@@ -181,15 +202,17 @@
         }
         const remaining = impact ? impact.until - Date.now() : 0;
         const offset = remaining > 0 && !reduced ? [0, 1, 0, -1][Math.floor(elapsed / 80) % 4] : 0;
-        if (boss.complete && boss.naturalWidth) ctx.drawImage(boss, 12 + offset, 77 + extension - crop);
+        if (boss.complete && boss.naturalWidth) ctx.drawImage(boss, 12 + offset, Math.floor((height - 96) / 2));
         if (remaining > 0) {
           const fx = load(frame(A.effects.hit, reduced ? 0 : elapsed), redraw);
-          if (fx.complete && fx.naturalWidth) ctx.drawImage(fx, 48, 105 + extension - crop);
+          if (fx.complete && fx.naturalWidth) ctx.drawImage(fx, 48, Math.floor(height / 2));
         }
+        const hitNumber = document.querySelector('.hit-number');
+        if (hitNumber) { hitNumber.hidden = remaining <= 0; hitNumber.textContent = impact ? content.interpolate('views047', [number(impact.amount)]) : ''; }
         align(canvas);
       }
       document.querySelectorAll('img[data-art], .hurt-effect').forEach(align);
-      if (!reduced && (elapsed < 320 || (impact && impact.until > Date.now()))) animationId = root.requestAnimationFrame(paint);
+      if ((!reduced && elapsed < 320) || (impact && impact.until > Date.now())) animationId = root.requestAnimationFrame(paint);
     }
     paint();
   }

@@ -1,6 +1,6 @@
-# Kindleborn v1.1.2
+# Kindleborn v1.2.0
 
-Bu yama telefon denemesindeki üç sunum sorununu düzeltir: main odak çerçevesi, 72 px düz alt gezinme barı ve eş CSS pip'leri olan kompakt alışkanlık satırları. Oyun hesapları/şema/görseller değişmedi. Üst başlık 63 px; tek satırlı kart 66 px, iki satırlı kart 69 px. `node tests.js` 46 test içerir. Ölçüler 360×640 ve 390×844 masaüstü Chrome'da kontrol edildi; gerçek iPhone/Safari denemesi bekliyor. Klasik envanter düzeni ve eşya çıkarma desteği sonraya bırakıldı.
+Savaş, Ben ve Dükkan üç ana sekmedir. Savaş'ta boss ve bugünün alışkanlıkları birlikte görünür; sayfa sabit, liste içeriden kayar. Ben'de Eşya / Özellik / Geçmiş bulunur: dokunarak giy/çıkar, 15 haftalık takvim ve gün serileri. Önceki sunum düzeltmeleri korunur. `node tests.js` 53 test içerir. 360×640 ve 390×844 yalnız masaüstü Chrome'da doğrulandı; gerçek iPhone/Safari denemesi bekliyor. Ayrıntılar: [v1.2 raporu](notes/rutin-v1-2-rapor.md).
 
 Türkçe, cihazda çalışan alışkanlık takip RPG’si. Düz HTML / CSS / JavaScript; paket, derleme, CDN, sunucu uygulaması, hesap, analitik ve bildirim yok. GitHub Pages yalnız statik dosyaları sunar. Alışkanlık, tik ve oyun verisi IndexedDB’de kalır; internete gönderilmez. İlk çevrimiçi açılışta uygulama kabuğu, yerel font ve bütün oyun sprite’ları önbelleğe alınır.
 
@@ -19,11 +19,10 @@ node serve.js
 
 ## Ekranlar
 
-- **Boss:** ana ekran. Karakter canı, parçalı boss canı, sezon günü, zayıf tür ve büyük boss sprite’ı. Altında bugünün canlı hasarı ve kapanmış son günün boss iyileşmesi / karakter can kazancı gösterilir. Kısa alışkanlık listesinden tik atınca boss sarsılır, hasar sayısı görünür. Üstteki KINDLEBORN düğmesi bu ekrana döner.
-- **Bugün:** günlük alışkanlık ekle / düzenle / arşivle, tür rozeti ve zorluk noktaları. Tik yalnız bugün için atılır veya geri alınır. Tarih gezintisi ve haftalık hedef alanı kaldırıldı.
-- **Ben:** karakter adı, seviye, XP, can ve dört özelliğin seviyesi / XP’si. Kılıç, Zırh, Pelerin, Taç, Yüzük ve Kolye slotları. Ekipman karakterin üzerinde değil slotlarda görünür. Unvan yoktur; `game.js → levelTitle()` ilerisi için null döner.
+- **Savaş:** karakter/boss canı, sezon günü, zayıf tür, boss sahnesi, canlı hasar ve önceki günün iyileşmesi/can kazancı. Altında günlük alışkanlık ekle / düzenle / arşivle ve tik listesi. Tik atınca boss sarsılır, 650 ms hasar sayısı görünür. Boss bloğu alanın en fazla %40'ı; kalan alışkanlık alanı içeriden kayar. Eski Bugün kimliği ve marka bu ekrana döner.
+- **Ben:** Eşya'da karakter, altı slot, seviye, XP şeridi, altın ve dört sütunlu 12 hücreli envanter. Bir eşyaya dokunarak giy; kuşanılı slota veya işaretli eşyaya dokunarak çıkar. Özellik'te can, toplam XP ve dört özellik korunur. Geçmiş'te takvim, seri listesi ve tamamlanan sezonlar. Ekipman karakterin üzerinde çizilmez. Kısa ekranda Eşya içeriği içeriden kayar.
 - **Dükkan:** altın, 3 kademeli kılıç/zırh ve 4 kozmetik. Her eşya bir kez satın alınır, ardından kuşanılabilir. Kozmetiklerin oyun etkisi yoktur.
-- **Geçmiş:** son 8 haftanın alışkanlık başına k/7 ve yüzdesi; sezon sonuçları ve kapanmış son 56 günün defteri. Salt okunur.
+- **Geçmiş:** Ben'in alt sekmesidir. Pazartesi başlayan 15 hafta; gelecek günler gösterilmez. Bugün tik atılmamış olması seriyi bozmaz; dün de boşsa güncel seri sıfırdır. En uzun seri ve sezon sonuçları korunur. Eski history kimliği bu alt sekmeye yönlenir.
 - **Ayarlar:** sağ üstteki dişli. JSON yedek, geri yükleme, depolama durumu, arşiv, sürüm ve varsayılan kapalı Geliştirici bölümü.
 
 İlk açılışta 1–24 karakterlik karakter adı istenir. Alışkanlık yoksa sezon başlamaz. İlk aktif alışkanlık eklendiğinde birinci sezon otomatik başlar. Varsayılan alışkanlık Güç / Orta / günlük; ad en fazla 80 karakter. Tür listesi yalnız `config.js → TYPES` içinde tanımlıdır. Kaçınma alışkanlıkları da elle tiklenir; tik “bugün yapmadım” beyanıdır.
@@ -79,7 +78,7 @@ season = { id, sira, bossId, baslangic, baslangicTs, tohum, p0, bossCan0, ayar,
   sonuc: null /* veya { durum, bitisTarihi, bitisTs, gun, altin, xp } */ }
 gun = { tarih, sezonId, potansiyel, yapilan, kacirilan, tikSayisi, mukemmel }
 purchase = { id, itemId, ts, fiyat }
-equip = { id, slot, itemId, ts }
+equip = { id, slot, itemId, ts } // itemId: null, o slotu boşaltan olaydır
 ```
 
 `habits`, `ticks`, `settings` depoları korunur. Yeni depolar `seasons`, `gunler` (anahtar tarih), `purchases`, `equips`. Günlük tik için `[habitId,tarih]` ve satın alma için `itemId` benzersiz indeksleri vardır. Kuşanma slotları `kilic`, `zirh`, `pelerin`, `tac`, `yuzuk`, `kolye`; katalogda kozmetiklerin ana slotu `kozmetik`, alt slotu `kozmetikSlot` alanındadır.
@@ -138,6 +137,10 @@ Press Start 2P yerel `assets/fonts/PressStart2P-Regular.ttf` dosyasından yükle
 
 ## Doğrulama
 
+V1.2: `node tests.js` **53 bağımlılıksız test**; B/C/D aşamalarında sırasıyla 46/49/53 geçti. 360×640 ve 390×844, DPR 3 masaüstü headless Chrome'da 30 teslim görüntüsü; gerçek IndexedDB giy/çıkar, slot değiştirme, boş slot, null olaylı yedek ve defter korunması. Ayrıntılı ölçüler ve denenmeyenler [v1.2 raporunda](notes/rutin-v1-2-rapor.md).
+
+### Önceki v1 / v1.1 doğrulama kayıtları
+
 V1.1 için altı yeni test: config/kabuk sürümü, dosya ve önbellek bütünlüğü, PNG IHDR boyutları, UI/efekt boyutları, yasak dosyaların dışlanması ve ikon kopyalarının birebir eşitliği. Mevcut 38 oyun/veri testi korunur.
 
 V1.1 tarayıcı kontrolü: 360/390/430 CSS px × 640/900 CSS px, DPR 2.625 ve 3, altı ekran; bütün sprite başlangıç/boyutları cihaz pikselinde tam sayı ve ortak S, yatay taşma yok. Tüm kabuk çevrimdışı bulunur; v1 → v1.1 gerçek worker güncellemesi IndexedDB’nin bütün depolarını birebir korur ve eski önbelleği siler. Sonuç ve kapatılmış sandık kontrol edildi; kabuk dışı uygulama isteği ve JavaScript hatası görülmedi.
@@ -156,7 +159,7 @@ Depo: [runosc/kindleborn](https://github.com/runosc/kindleborn). Uygulama: [Kind
 
 Pages kaynağı **main / /(root)**, statik sunum için `.nojekyll` kullanılır. Uygulama yolları, manifest scope/start_url/id ve worker kaydı görelidir. Node veya sunucu uygulaması üretimde gerekmez.
 
-Yeni sürümde `config.js VERSION` ve `sw.js VERSION` birlikte artırılır (şimdiki sürüm **1.1.2**). Değişiklikleri kontrol edip testleri çalıştırdıktan sonra:
+Yeni sürümde `config.js VERSION` ve `sw.js VERSION` birlikte artırılır (şimdiki sürüm **1.2.0**). Değişiklikleri kontrol edip testleri çalıştırdıktan sonra:
 
 ```powershell
 node tests.js

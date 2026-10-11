@@ -308,8 +308,8 @@ function pngSize(file) {
   assert.equal(bytes.toString('ascii',12,16), 'IHDR', file);
   return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 }
-test('1.1.2 kabuk ve config sürümü eşleşir; veri şeması 2 kalır', () => {
-  assert.equal(C.VERSION, '1.1.2'); assert.equal(shellContext.testVersion, C.VERSION); assert.equal(C.SCHEMA_VERSION, 2);
+test('1.2.0 kabuk ve config sürümü eşleşir; veri şeması 2 kalır', () => {
+  assert.equal(C.VERSION, '1.2.0'); assert.equal(shellContext.testVersion, C.VERSION); assert.equal(C.SCHEMA_VERSION, 2);
 });
 test('ASSETS, boss/eşya kataloğu ve SHELL dosyaları var ve çevrimdışı kabukta', () => {
   const sprites = [...assetPaths, ...content.BOSSES.flatMap(b => [b.sprite,b.arkaplan,b.portre]), ...content.ITEMS.map(i=>i.sprite)];
@@ -386,4 +386,77 @@ test('main odak çerçevesi kapalı; erişilebilir gezinme ve altın odak halkas
   assert.match(app, /main\.focus\(/);
 });
 
-console.log(`\n${passed} test geçti. Saat dilimi: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+test('Çıkarma olayı slotu boşaltır, bonus sıfır; geçmiş günün ekipmanı korunur', () => {
+  const day = '2026-10-06';
+  const events = [{ id:'w', slot:'kilic', itemId:'kilic-3', ts:G.dayStart('2026-10-05') }, { id:'off', slot:'kilic', itemId:null, ts:G.dayStart(day) }];
+  assert.equal(G.equipmentAt(events,G.dayEnd('2026-10-05')).kilic.id,'kilic-3');
+  assert.equal(G.equipmentAt(events,G.dayEnd(day)).kilic,undefined);
+  assert.equal(G.gearBonus(G.equipmentAt(events,G.dayEnd(day)).kilic,'kilic',C.GAME_CONFIG),0);
+});
+test('Null itemId yedeği ve eski kuşanma yedeği yüklenir; geçersiz slot/id reddedilir', () => {
+  const { state, season } = fixture({bossCanKatsayisi:0.01});
+  const t = gameTick(state,'2026-10-05'), result=G.evaluateSeason(state,season,'2026-10-05').result;
+  season.sonuc={durum:result.durum,bitisTarihi:result.bitisTarihi,gun:result.gun,altin:result.altin,xp:result.xp,bitisTs:t.ts+1};
+  const ts=G.dayStart('2026-10-06');
+  state.purchases.push({id:'p',itemId:'kilic-1',ts,fiyat:50});
+  state.equips.push({id:'e',slot:'kilic',itemId:'kilic-1',ts:ts+1});
+  assert.deepEqual(B.validateBackup(JSON.parse(B.makeBackup(state)),'2026-10-10'),state);
+  state.equips.push({id:'off',slot:'kilic',itemId:null,ts:ts+2});
+  assert.deepEqual(B.validateBackup(JSON.parse(B.makeBackup(state)),'2026-10-10'),state);
+  for(const patch of [{slot:'unknown'},{itemId:'unknown'},{itemId:undefined},{ts:-1},{id:'e'}]){
+    const bad=JSON.parse(B.makeBackup(state));Object.assign(bad.equips.at(-1),patch);
+    assert.throws(()=>B.validateBackup(bad,'2026-10-10'),/Kuşanma/);
+  }
+});
+
+test('Seri: ardışık, bugün boş, kaçırılan gün, en uzun ve yeni alışkanlık', () => {
+  const h={...habit,olusturma:'2026-10-01'};
+  const ticks=['2026-10-01','2026-10-02','2026-10-03','2026-10-05','2026-10-06'].map(date=>tick(date));
+  const before=JSON.stringify({h,ticks});
+  assert.deepEqual(D.streak(h,ticks,'2026-10-06'),{current:2,best:3});
+  assert.deepEqual(D.streak(h,ticks,'2026-10-07'),{current:2,best:3});
+  assert.deepEqual(D.streak(h,ticks,'2026-10-08'),{current:0,best:3});
+  assert.deepEqual(D.streak({...h,olusturma:'2026-10-06'},ticks,'2026-10-06'),{current:1,best:1});
+  assert.deepEqual(D.streak({...h,olusturma:'2026-10-07'},ticks,'2026-10-07'),{current:0,best:0});
+  assert.deepEqual(D.streak(h,[...ticks,tick('2026-10-06'),tick('2026-10-07',{habitId:'other'}),tick('2026-10-20')],'2026-10-06'),{current:2,best:3});
+  assert.equal(JSON.stringify({h,ticks}),before);
+});
+test('Seri ay/yıl ve artık gün sınırlarında yerel takvimle sayılır', () => {
+  const h={...habit,olusturma:'2024-02-28'};
+  assert.deepEqual(D.streak(h,['2024-02-28','2024-02-29','2024-03-01'].map(date=>tick(date)),'2024-03-01'),{current:3,best:3});
+  assert.deepEqual(D.streak({...h,olusturma:'2026-12-31'},['2026-12-31','2027-01-01'].map(date=>tick(date)),'2027-01-02'),{current:2,best:2});
+});
+test('Takvim seviyeleri: tüm yüzde sınırları ve alışkanlıksız gün', () => {
+  for(const [percent,level] of [[0,0],[1,1],[33,1],[34,2],[66,2],[67,3],[99,3],[100,4]]) assert.equal(D.calendarLevel(percent),level);
+  assert.equal(D.calendarLevel(100,0),0);
+});
+test('Geçmiş: 15 hafta, gelecek yok, arşiv seri listesine girmez ve mevsim defteri korunur', () => {
+  const context=vm.createContext({RutinConfig:C,RutinDerive:D,RutinGame:G,RutinContent:content,addEventListener(){}});
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'views.js'),'utf8'),context);
+  const {state}=fixture();state.habits.push({...habit,id:'archived',ad:'Arşiv gizli',arsiv:true});
+  const html=context.RutinViews.historyPage(state,'2026-10-11');
+  assert.equal((html.match(/class="calendar-cell"/g)||[]).length,105);
+  assert.ok(!html.includes('2026-10-12'));assert.ok(!html.includes('Arşiv gizli'));
+  assert.ok(html.includes(content.TEXT.seasons));
+  const monday=context.RutinViews.historyPage(state,'2026-10-12');
+  assert.equal((monday.match(/class="calendar-cell"/g)||[]).length,99);
+  assert.ok(!monday.includes('data-date="2026-10-13"'));
+});
+
+async function storeCommandTests() {
+  // Exercise the actual store callbacks; only the IndexedDB transaction is replaced.
+  const state={equips:[{id:'e',slot:'kilic',itemId:'kilic-3',ts:G.dayStart('2026-10-06')}]};
+  const context=vm.createContext({RutinConfig:C,RutinDerive:D,RutinGame:G,RutinContent:content,testState:state,crypto:require('node:crypto').webcrypto});
+  let source=fs.readFileSync(path.join(__dirname,'store.js'),'utf8');
+  source=source.replace('  root.RutinStore =', '  command = async (action,today,now) => action(root.testState,today,now);\n  root.RutinStore =');
+  vm.runInContext(source,context);
+  assert.equal(await context.RutinStore.unequip('kilic','2026-10-06',G.dayStart('2026-10-06')),true);
+  assert.equal(state.equips.at(-1).ts,state.equips[0].ts+1);
+  assert.equal(state.equips.at(-1).itemId,null);
+  const count=state.equips.length;
+  assert.equal(await context.RutinStore.unequip('kilic','2026-10-06',G.dayStart('2026-10-06')),false);
+  assert.equal(state.equips.length,count);
+  await assert.rejects(context.RutinStore.unequip('invalid','2026-10-06',G.dayStart('2026-10-06')));
+  passed++;console.log('✓ store.unequip: monotonik olay, boş slot yoksayılır, geçersiz slot reddedilir');
+}
+storeCommandTests().then(()=>console.log(`\n${passed} test geçti. Saat dilimi: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`)).catch(error=>{console.error(error);process.exitCode=1;});

@@ -15,18 +15,18 @@
     olumAltinOrani: [0, 1], zekaAltin: [0, 1], zekaTavan: [0, 1], seviyeTaban: [1, 10000], seviyeArtis: [0, 10000]
   });
   function validateConfig(value) {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Oyun ayarları geçersiz.');
-    if (Object.keys(value).length !== Object.keys(C.GAME_CONFIG).length) throw new Error('Oyun ayarları eksik veya tanımsız alan içeriyor.');
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(content.COPY.copy150);
+    if (Object.keys(value).length !== Object.keys(C.GAME_CONFIG).length) throw new Error(content.COPY.copy151);
     const result = {};
     for (const [key, [min, max]] of Object.entries(CONFIG_RULES)) {
-      if (!Number.isFinite(value[key]) || value[key] < min || value[key] > max) throw new Error(`${key}: ${min}–${max} arasında bir sayı olmalı.`);
+      if (!Number.isFinite(value[key]) || value[key] < min || value[key] > max) throw new Error(content.interpolate('game001', [key, min, max]));
       result[key] = value[key];
     }
     for (const key of ['kilicBonuslari', 'zirhBonuslari']) {
-      if (!Array.isArray(value[key]) || value[key].length !== 3 || value[key].some(n => !Number.isFinite(n) || n < 0 || n >= 1)) throw new Error(`${key}: üç bonus, 0 ile 1 arasında olmalı.`);
+      if (!Array.isArray(value[key]) || value[key].length !== 3 || value[key].some(n => !Number.isFinite(n) || n < 0 || n >= 1)) throw new Error(content.interpolate('game002', [key]));
       result[key] = value[key].slice();
     }
-    if (!Number.isInteger(result.sezonGunu) || result.rMin > result.rMax) throw new Error('Sezon günü tam sayı olmalı; rMin, rMax değerini aşamaz.');
+    if (!Number.isInteger(result.sezonGunu) || result.rMin > result.rMax) throw new Error(content.COPY.copy152);
     return result;
   }
   function seeded(seed) {
@@ -80,7 +80,7 @@
     }
     return { xp, ...level(xp, config), turler: Object.fromEntries(C.TYPES.map(type => [type, { xp: typeXp[type], ...level(typeXp[type], config) }])) };
   }
-  function maxHp(attributes, config) { return config.tabanCan + config.dayaniklilikCan * attributes.turler['Dayanıklılık'].seviye; }
+  function maxHp(attributes, config) { return config.tabanCan + config.dayaniklilikCan * attributes.turler[content.COPY.copy153].seviye; }
   function potential(habits, date, config = C.GAME_CONFIG) {
     return habits.filter(habit => !habit.arsiv && habit.olusturma <= date).reduce((sum, habit) => sum + habit.zorluk * config.puanCarpani, 0);
   }
@@ -94,7 +94,7 @@
       const old = latest[event.slot];
       if (!old || event.ts > old.ts || (event.ts === old.ts && event.id > old.id)) latest[event.slot] = event;
     }
-    return Object.fromEntries(Object.entries(latest).map(([slot, event]) => [slot, content.ITEMS.find(item => item.id === event.itemId)]));
+    return Object.fromEntries(Object.entries(latest).map(([slot, event]) => [slot, event.itemId === null ? undefined : content.ITEMS.find(item => item.id === event.itemId)]));
   }
   function gearBonus(item, slot, config) { return item ? config[slot === 'kilic' ? 'kilicBonuslari' : 'zirhBonuslari'][item.kademe - 1] || 0 : 0; }
   function damage(ticks, boss, sword, config) {
@@ -124,11 +124,11 @@
     if (p0 <= 0 || !state.settings.karakterAdi) return null;
     const sorted = (state.seasons || []).slice().sort((a, b) => a.sira - b.sira);
     const previous = sorted.at(-1);
-    if (previous && !previous.sonuc) throw new Error('Aktif sezon kapanmadan yeni sezon başlatılamaz.');
+    if (previous && !previous.sonuc) throw new Error(content.COPY.copy154);
     const sira = previous ? previous.sira + 1 : 0;
     const victories = sorted.filter(s => s.sonuc && s.sonuc.durum === 'yenildi').length;
     const bossCan0 = config.bossCanKatsayisi * config.sezonGunu * p0 * config.zaferOlcegi ** victories * (previous && previous.sonuc.durum === 'oldu' ? config.olumOlcegi : 1);
-    if (!Number.isFinite(bossCan0)) throw new Error('Boss canı hesap sınırını aştı. Denge ayarını azalt.');
+    if (!Number.isFinite(bossCan0)) throw new Error(content.COPY.copy155);
     return { id, sira, bossId: content.BOSSES[sira % content.BOSSES.length].id, baslangic: date, baslangicTs: now, tohum: seed, p0, bossCan0, ayar: clone(config), sonuc: null };
   }
   function evaluateSeason(state, season, today, override) {
@@ -191,12 +191,12 @@
   function balance(state) { return (state.seasons || []).reduce((sum, season) => sum + (season.sonuc ? season.sonuc.altin : 0), 0) - (state.purchases || []).reduce((sum, purchase) => sum + purchase.fiyat, 0); }
   function simulateSynthetic(config, consistency, count = 1000, seed = 'rutin-simulator', maxDays = 90) {
     config = validateConfig(config);
-    if (!Number.isFinite(consistency) || consistency < 0 || consistency > 1 || !Number.isInteger(count) || count < 1 || count > 1000 || !Number.isInteger(maxDays) || maxDays < 1 || maxDays > 365) throw new Error('Simülasyon girdileri geçersiz.');
+    if (!Number.isFinite(consistency) || consistency < 0 || consistency > 1 || !Number.isInteger(count) || count < 1 || count > 1000 || !Number.isInteger(maxDays) || maxDays < 1 || maxDays > 365) throw new Error(content.COPY.copy156);
     let wins = 0, deaths = 0, winDays = 0, deathDays = 0;
     for (let run = 0; run < count; run++) {
       const date = '2026-01-05';
       const habits = Array.from({ length: 5 }, (_, i) => ({ id: `h${i}`, ad: `h${i}`, tur: C.TYPES[i % 4], zorluk: 2, olusturma: date, arsiv: false, haftalikHedef: 7 }));
-      const state = { habits, ticks: [], gunler: [], seasons: [], equips: [], purchases: [], settings: { karakterAdi: 'Simülasyon', oyunAyar: config } };
+      const state = { habits, ticks: [], gunler: [], seasons: [], equips: [], purchases: [], settings: { karakterAdi: content.COPY.copy157, oyunAyar: config } };
       const season = createSeason(state, date, dayStart(date), 'sim', `${seed}:${run}`);
       state.seasons.push(season);
       const random = seeded(`${seed}:ticks:${run}`);

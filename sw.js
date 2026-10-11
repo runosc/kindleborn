@@ -1,12 +1,23 @@
 'use strict';
 // Bump VERSION here AND in config.js whenever a cached asset changes.
 // v1.1.1 presentation: main focus, flat navigation, compact habit rows.
-const VERSION = '1.1.2';
+const VERSION = '1.2.0';
 // Scope-specific prefix prevents deleting another app's caches on github.io.
 const PREFIX = `rutin:${self.registration.scope}:`;
 const CACHE = `${PREFIX}v${VERSION}`;
 const SHELL = [
   './', './index.html', './style.css', './config.js', './derive.js', './content.js', './game.js', './data.js', './store.js', './views.js', './app.js', './simulator.js',
+  './assets/ui/hazir/menu_savas_v01.png',
+  './assets/ui/hazir/ikon_alev_v01.png',
+  './assets/ui/hazir/ikon_alev_sonuk_v01.png',
+  './assets/ui/hazir/ikon_alev_mini_v01.png',
+  './assets/ui/hazir/ikon_kupa_v01.png',
+  './assets/ui/hazir/ui_takvim_bugun_v01.png',
+  './assets/ui/hazir/ui_takvim_hucre_0_v01.png',
+  './assets/ui/hazir/ui_takvim_hucre_1_v01.png',
+  './assets/ui/hazir/ui_takvim_hucre_2_v01.png',
+  './assets/ui/hazir/ui_takvim_hucre_3_v01.png',
+  './assets/ui/hazir/ui_takvim_hucre_4_v01.png',
   './manifest.webmanifest', './icons/apple-touch-icon.png', './icons/icon-192.png',
   './icons/icon-512.png',
   './assets/fonts/PressStart2P-Regular.ttf',

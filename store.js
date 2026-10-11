@@ -8,7 +8,7 @@
     return new Promise((resolve, reject) => { req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error); });
   }
   function complete(tx) {
-    return new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onabort = () => reject(tx.error || new Error('Kayıt tamamlanamadı.')); tx.onerror = () => {}; });
+    return new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onabort = () => reject(tx.error || new Error(content.COPY.copy105)); tx.onerror = () => {}; });
   }
   function uid() {
     if (crypto.randomUUID) return crypto.randomUUID();
@@ -88,7 +88,7 @@
             for (const [id, record] of records) {
               if (before[key].get(id) === JSON.stringify(record)) continue;
               if (key === 'gunler') {
-                if (before[key].has(id)) throw new Error('Kapanmış gün değiştirilemez.');
+                if (before[key].has(id)) throw new Error(content.COPY.copy106);
                 store.add(record);
               } else store.put(record);
             }
@@ -104,9 +104,9 @@
   async function saveHabit(habit, today, now) {
     return command((state, current) => {
       const old = state.habits.find(item => item.id === habit.id);
-      if (old && old.olusturma !== habit.olusturma) throw new Error('Oluşturulma tarihi değiştirilemez.');
+      if (old && old.olusturma !== habit.olusturma) throw new Error(content.COPY.copy107);
       const validated = { ...habit, haftalikHedef: 7 };
-      if (typeof validated.ad !== 'string' || !validated.ad.trim() || validated.ad.length > 80 || !C.TYPES.includes(validated.tur) || ![1, 2, 3].includes(validated.zorluk) || !D.isDate(validated.olusturma) || validated.olusturma > current || typeof validated.arsiv !== 'boolean' || typeof validated.id !== 'string' || !validated.id) throw new Error('Alışkanlık bilgileri geçersiz.');
+      if (typeof validated.ad !== 'string' || !validated.ad.trim() || validated.ad.length > 80 || !C.TYPES.includes(validated.tur) || ![1, 2, 3].includes(validated.zorluk) || !D.isDate(validated.olusturma) || validated.olusturma > current || typeof validated.arsiv !== 'boolean' || typeof validated.id !== 'string' || !validated.id) throw new Error(content.COPY.copy108);
       if (old) state.habits[state.habits.indexOf(old)] = validated;
       else state.habits.push(validated);
     }, today, now);
@@ -114,13 +114,13 @@
   async function toggleTick(habitId, date, today, now) {
     return command((state, current, stamp) => {
       const habit = state.habits.find(item => item.id === habitId);
-      if (!habit || !G.canTickToday(habit, date, current, state.gunler)) throw new Error('Tik yalnız kapanmamış bugün için değiştirilebilir.');
+      if (!habit || !G.canTickToday(habit, date, current, state.gunler)) throw new Error(content.COPY.copy109);
       const existing = state.ticks.find(tick => tick.habitId === habitId && tick.tarih === date);
       const season = state.seasons.find(item => !item.sonuc);
-      if (!season) throw new Error('Önce karakterini oluştur ve bir alışkanlık ekle.');
-      if (existing && existing.ts < (season.baslangicTs || G.dayStart(season.baslangic))) throw new Error('Bu tik önceki sezona ait; kapanmış sezon değiştirilemez.');
+      if (!season) throw new Error(content.COPY.copy110);
+      if (existing && existing.ts < (season.baslangicTs || G.dayStart(season.baslangic))) throw new Error(content.COPY.copy111);
       const result = G.evaluateSeason(state, season, current).result;
-      if (result && result.bitisTarihi < current) throw new Error('Önce tamamlanan sezonu kapat.');
+      if (result && result.bitisTarihi < current) throw new Error(content.COPY.copy112);
       if (existing) { state.ticks.splice(state.ticks.indexOf(existing), 1); return false; }
       state.ticks.push({ id: uid(), habitId, tarih: date, ts: Math.max(stamp, season.baslangicTs || 0), snapshot: { tur: habit.tur, zorluk: habit.zorluk, haftalikHedef: 7 } });
       return true;
@@ -128,7 +128,7 @@
   }
   async function deleteHabit(id, today, now) {
     return command(state => {
-      if (!G.canDeleteHabit(id, state.ticks)) throw new Error('Tiki olan alışkanlık silinemez. Arşivleyebilirsin.');
+      if (!G.canDeleteHabit(id, state.ticks)) throw new Error(content.COPY.copy113);
       state.habits = state.habits.filter(habit => habit.id !== id);
     }, today, now);
   }
@@ -136,7 +136,7 @@
     return command(state => {
       if (patch.karakterAdi !== undefined) {
         const name = patch.karakterAdi.trim();
-        if (!name || name.length > 24) throw new Error('Karakter adı 1–24 karakter olmalı.');
+        if (!name || name.length > 24) throw new Error(content.COPY.copy114);
         state.settings.karakterAdi = name;
       }
       if (patch.oyunAyar) state.settings.oyunAyar = G.validateConfig(patch.oyunAyar);
@@ -145,26 +145,35 @@
   async function closeSeason(today, now) {
     return command((state, date, stamp) => {
       const season = state.seasons.find(item => !item.sonuc);
-      if (!season) throw new Error('Aktif sezon bulunamadı.');
+      if (!season) throw new Error(content.COPY.copy115);
       const result = G.evaluateSeason(state, season, date).result;
-      if (!result) throw new Error('Sezon henüz bitmedi.');
+      if (!result) throw new Error(content.COPY.copy116);
       season.sonuc = { durum: result.durum, bitisTarihi: result.bitisTarihi, gun: result.gun, altin: result.altin, xp: result.xp, bitisTs: result.bitisTarihi === date ? stamp : G.dayEnd(result.bitisTarihi) };
     }, today, now);
   }
   async function purchase(itemId, today, now) {
     return command((state, date, stamp) => {
       const item = content.ITEMS.find(item => item.id === itemId);
-      if (!item || state.purchases.some(purchase => purchase.itemId === itemId)) throw new Error('Bu eşya zaten sende veya bulunamadı.');
-      if (G.balance(state) < item.fiyat) throw new Error('Altının bu eşya için yeterli değil.');
+      if (!item || state.purchases.some(purchase => purchase.itemId === itemId)) throw new Error(content.COPY.copy117);
+      if (G.balance(state) < item.fiyat) throw new Error(content.COPY.copy118);
       state.purchases.push({ id: uid(), itemId, ts: stamp, fiyat: item.fiyat });
     }, today, now);
   }
   async function equip(itemId, today, now) {
     return command((state, date, stamp) => {
       const item = content.ITEMS.find(item => item.id === itemId);
-      if (!item || !state.purchases.some(purchase => purchase.itemId === itemId)) throw new Error('Önce bu eşyayı satın al.');
+      if (!item || !state.purchases.some(purchase => purchase.itemId === itemId)) throw new Error(content.COPY.copy119);
       const ts = Math.max(stamp, ...state.equips.map(event => event.ts + 1));
       state.equips.push({ id: uid(), itemId, slot: G.slotFor(item), ts });
+    }, today, now);
+  }
+  async function unequip(slot, today, now) {
+    return command((state, date, stamp) => {
+      if (!Object.hasOwn(content.SLOTS, slot)) throw new Error(content.TEXT.invalidSlot);
+      if (!G.equipmentAt(state.equips, G.dayEnd(date))[slot]) return false;
+      const ts = Math.max(stamp, ...state.equips.map(event => event.ts + 1));
+      state.equips.push({ id: uid(), itemId: null, slot, ts });
+      return true;
     }, today, now);
   }
   async function replaceAll(data) {
@@ -174,5 +183,5 @@
     const settings = tx.objectStore('settings'); settings.clear(); settings.put(data.settings, 'main');
     await done;
   }
-  root.RutinStore = Object.freeze({ open, ensureSettings, readAll, sync, saveHabit, toggleTick, deleteHabit, saveSettings, closeSeason, purchase, equip, replaceAll, uid });
+  root.RutinStore = Object.freeze({ open, ensureSettings, readAll, sync, saveHabit, toggleTick, deleteHabit, saveSettings, closeSeason, purchase, equip, unequip, replaceAll, uid });
 })(globalThis);

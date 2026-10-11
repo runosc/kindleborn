@@ -4,15 +4,16 @@
   else root.RutinDerive = derive;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
+  const content = typeof module === 'object' && module.exports ? require('./content.js') : globalThis.RutinContent;
   // Calendar arithmetic deliberately uses local noon, never UTC parsing or ISO conversion.
   function localDate(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
   function parseDate(value) {
-    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error('Geçersiz tarih.');
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(content.COPY.copy158);
     const [year, month, day] = value.split('-').map(Number);
     const date = new Date(year, month - 1, day, 12);
-    if (year < 1000 || localDate(date) !== value) throw new Error('Geçersiz tarih.');
+    if (year < 1000 || localDate(date) !== value) throw new Error(content.COPY.copy158);
     return date;
   }
   function isDate(value) {
@@ -62,5 +63,24 @@
     const done = eligible.filter(habit => ticks.some(tick => tick.habitId === habit.id && tick.tarih === date)).length;
     return { done, total: eligible.length, percent: eligible.length ? Math.round(done / eligible.length * 100) : 0 };
   }
-  return Object.freeze({ localDate, parseDate, isDate, addDays, weekStart, canTick, tickSnapshot, weekProgress, historyWeeks, dayProgress });
+  function streak(habit, ticks, today) {
+    const dates = [...new Set(ticks.filter(tick => tick.habitId === habit.id && tick.tarih >= habit.olusturma && tick.tarih <= today).map(tick => tick.tarih))].sort();
+    const days = new Set(dates);
+    let current = 0, best = 0, run = 0, previous;
+    for (const date of dates) {
+      run = previous && addDays(previous, 1) === date ? run + 1 : 1;
+      best = Math.max(best, run); previous = date;
+    }
+    let cursor = days.has(today) ? today : addDays(today, -1);
+    while (cursor >= habit.olusturma && days.has(cursor)) { current++; cursor = addDays(cursor, -1); }
+    return { current, best };
+  }
+  function calendarLevel(percent, total = 1) {
+    if (!total || percent <= 0) return 0;
+    if (percent <= 33) return 1;
+    if (percent <= 66) return 2;
+    if (percent < 100) return 3;
+    return 4;
+  }
+  return Object.freeze({ localDate, parseDate, isDate, addDays, weekStart, canTick, tickSnapshot, weekProgress, historyWeeks, dayProgress, streak, calendarLevel });
 });

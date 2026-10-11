@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const context = { self: { registration: { scope: 'https://kindleborn.test/' }, addEventListener() {} }, URL };
 vm.runInNewContext(fs.readFileSync(path.join(root, 'sw.js'), 'utf8') + '\nglobalThis.shell = SHELL;', context);
 const files = [...new Set([...Array.from(context.shell).map(p => p === './' ? 'index.html' : p.replace(/^\.\//, '')),
-  'sw.js', '.gitignore', '.nojekyll', 'README.md', 'tests.js', 'serve.js',
+  'sw.js', '.gitignore', '.nojekyll', 'README.md', 'notes/rutin-v1-2-rapor.md', 'tests.js', 'serve.js',
   'tools/release-files.cjs', 'assets/fonts/OFL.txt', 'assets/paletler/endesga-32.hex',
   'assets/uygulama_ikonu/hazir/icon-192.png', 'assets/uygulama_ikonu/hazir/icon-512.png',
   'assets/uygulama_ikonu/hazir/apple-touch-icon-180.png',

@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-title" content="Kindleborn">
   <meta name="description" content="Günlük alışkanlıklarınla bosslara karşı ilerle. Verilerin yalnız cihazında.">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
-  <title>Kindleborn</title>
+  <title data-copy="copy159"></title>
   <link rel="icon" type="image/png" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./style.css">
   <script defer src="./config.js"></script>
-  <script defer src="./derive.js"></script>
   <script defer src="./content.js"></script>
+  <script defer src="./derive.js"></script>
   <script defer src="./game.js"></script>
   <script defer src="./data.js"></script>
   <script defer src="./store.js"></script>
@@ -27,48 +27,47 @@
 <body>
   <div class="app-shell">
     <header class="app-header">
-      <button class="brand" data-page="boss" type="button" aria-label="Boss ana ekranı">KINDLEBORN</button>
-      <button class="icon-button" type="button" data-page="settings" aria-label="Ayarlar"><img class="pixel" data-asset="ui.menu_ayar_v01" alt="" aria-hidden="true"></button>
+      <button class="brand" data-page="boss" type="button" aria-label="" data-copy-aria-label="copy178" data-label="battleHome"><span data-copy="copy160"></span></button>
+      <button class="icon-button" type="button" data-page="settings" aria-label="" data-copy-aria-label="copy179"><img class="pixel" data-asset="ui.menu_ayar_v01" alt="" aria-hidden="true"></button>
     </header>
-    <div id="update-banner" class="update-banner" hidden><span>Yeni sürüm hazır.</span><button id="update-button" type="button">Güncelle</button></div>
-    <main id="main" tabindex="-1" aria-busy="true"><p class="loading">Rutinlerin açılıyor…</p></main>
-    <nav class="bottom-nav" aria-label="Ana gezinme">
-      <button type="button" data-page="today"><img class="pixel nav-icon" data-asset="menu.today" alt="" aria-hidden="true">Bugün</button>
-      <button type="button" data-page="me"><img class="pixel nav-icon" data-asset="menu.me" alt="" aria-hidden="true">Ben</button>
-      <button type="button" data-page="shop"><img class="pixel nav-icon" data-asset="menu.shop" alt="" aria-hidden="true">Dükkan</button>
-      <button type="button" data-page="history"><img class="pixel nav-icon" data-asset="menu.history" alt="" aria-hidden="true">Geçmiş</button>
+    <div id="update-banner" class="update-banner" hidden><span><span data-copy="copy161"></span></span><button id="update-button" type="button"><span data-copy="copy162"></span></button></div>
+    <main id="main" tabindex="-1" aria-busy="true"><p class="loading"><span data-copy="copy163"></span></p></main>
+    <nav class="bottom-nav" aria-label="" data-copy-aria-label="copy180">
+      <button type="button" data-page="boss" data-label="battle"><img class="pixel nav-icon" data-asset="menu.boss" alt="" aria-hidden="true"><span data-text="battle"></span></button>
+      <button type="button" data-page="me" data-label="me"><img class="pixel nav-icon" data-asset="menu.me" alt="" aria-hidden="true"><span data-text="me"></span></button>
+      <button type="button" data-page="shop" data-label="shop"><img class="pixel nav-icon" data-asset="menu.shop" alt="" aria-hidden="true"><span data-text="shop"></span></button>
     </nav>
   </div>
   <dialog id="habit-dialog" aria-labelledby="habit-title">
     <form id="habit-form">
-      <div class="dialog-heading"><h2 id="habit-title">Yeni alışkanlık</h2><button type="button" class="icon-button" id="close-habit" aria-label="Kapat">×</button></div>
-      <label for="habit-name">Alışkanlık adı</label>
-      <input id="habit-name" name="ad" maxlength="80" placeholder="Örn. 20 dakika kitap oku" autocomplete="off" required>
-      <label for="habit-type">Tür</label><select id="habit-type" name="tur"></select>
-      <label for="habit-difficulty">Zorluk</label><select id="habit-difficulty" name="zorluk"></select>
-      <p class="field-note">Kaçınma alışkanlıklarında tik, “bugün yapmadım” demektir. Her tiki sen atarsın.</p>
+      <div class="dialog-heading"><h2 id="habit-title"><span data-copy="copy061"></span></h2><button type="button" class="icon-button" id="close-habit" aria-label="" data-copy-aria-label="copy181"><span data-copy="copy164"></span></button></div>
+      <label for="habit-name"><span data-copy="copy165"></span></label>
+      <input id="habit-name" name="ad" maxlength="80" placeholder="" data-copy-placeholder="copy182" autocomplete="off" required>
+      <label for="habit-type"><span data-copy="copy166"></span></label><select id="habit-type" name="tur"></select>
+      <label for="habit-difficulty"><span data-copy="copy167"></span></label><select id="habit-difficulty" name="zorluk"></select>
+      <p class="field-note"><span data-copy="copy168"></span></p>
       <p class="form-error" id="habit-error" role="alert"></p>
-      <button type="submit" class="primary wide" id="save-habit">Alışkanlığı ekle</button>
+      <button type="submit" class="primary wide" id="save-habit"><span data-copy="copy063"></span></button>
       <div id="habit-actions" class="habit-actions" hidden>
-        <button type="button" class="secondary wide" id="archive-habit">Arşivle</button>
-        <button type="button" class="danger-text wide" id="delete-habit">Kalıcı olarak sil</button>
+        <button type="button" class="secondary wide" id="archive-habit"><span data-copy="copy065"></span></button>
+        <button type="button" class="danger-text wide" id="delete-habit"><span data-copy="copy089"></span></button>
       </div>
     </form>
   </dialog>
   <dialog id="character-dialog" aria-labelledby="character-title">
     <form id="character-form">
-      <p class="eyebrow">MACERAN BAŞLIYOR</p><h2 id="character-title">Adın ne, yolcu?</h2>
-      <p>Her gün küçük bir adım. Her tik bir vuruş.</p>
-      <label for="character-name">Karakter adı</label><input id="character-name" maxlength="24" autocomplete="off" required>
+      <p class="eyebrow"><span data-copy="copy169"></span></p><h2 id="character-title"><span data-copy="copy170"></span></h2>
+      <p><span data-copy="copy171"></span></p>
+      <label for="character-name"><span data-copy="copy172"></span></label><input id="character-name" maxlength="24" autocomplete="off" required>
       <p id="character-error" class="form-error" role="alert"></p>
-      <button class="primary wide" type="submit">Devam et</button>
-      <button class="secondary wide" id="onboard-import" type="button">Önce bir yedek geri yükle</button>
+      <button class="primary wide" type="submit"><span data-copy="copy173"></span></button>
+      <button class="secondary wide" id="onboard-import" type="button"><span data-copy="copy174"></span></button>
     </form>
   </dialog>
   <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-description">
     <form method="dialog">
-      <h2 id="confirm-title">Emin misin?</h2><p id="confirm-description"></p>
-      <div class="confirm-actions"><button value="cancel" class="secondary" autofocus>Vazgeç</button><button value="confirm" id="confirm-yes" class="danger">Onayla</button></div>
+      <h2 id="confirm-title"><span data-copy="copy175"></span></h2><p id="confirm-description"></p>
+      <div class="confirm-actions"><button value="cancel" class="secondary" autofocus><span data-copy="copy176"></span></button><button value="confirm" id="confirm-yes" class="danger"><span data-copy="copy177"></span></button></div>
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
