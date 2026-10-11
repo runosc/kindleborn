@@ -308,8 +308,8 @@ function pngSize(file) {
   assert.equal(bytes.toString('ascii',12,16), 'IHDR', file);
   return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
 }
-test('1.1.1 kabuk ve config sürümü eşleşir; veri şeması 2 kalır', () => {
-  assert.equal(C.VERSION, '1.1.1'); assert.equal(shellContext.testVersion, C.VERSION); assert.equal(C.SCHEMA_VERSION, 2);
+test('1.1.2 kabuk ve config sürümü eşleşir; veri şeması 2 kalır', () => {
+  assert.equal(C.VERSION, '1.1.2'); assert.equal(shellContext.testVersion, C.VERSION); assert.equal(C.SCHEMA_VERSION, 2);
 });
 test('ASSETS, boss/eşya kataloğu ve SHELL dosyaları var ve çevrimdışı kabukta', () => {
   const sprites = [...assetPaths, ...content.BOSSES.flatMap(b => [b.sprite,b.arkaplan,b.portre]), ...content.ITEMS.map(i=>i.sprite)];
@@ -350,6 +350,40 @@ test('Uygulama ikonları hazır kaynağın birebir kopyasıdır', () => {
     assert.equal(pngSize(icon.src).join('x'), icon.sizes);
   }
   assert.ok(manifest.icons.every(icon => icon.purpose !== 'maskable'));
+});
+
+test('Kart şablonu eş pip üretir; dolu pip sayısı zorluktur, nokta glyph’i yoktur', () => {
+  const vm = require('node:vm');
+  const context = vm.createContext({ RutinConfig: C, RutinDerive: D, RutinGame: G, RutinContent: content, addEventListener() {} });
+  vm.runInContext(fs.readFileSync(path.join(__dirname, 'views.js'), 'utf8'), context);
+  const state = { habits: [], ticks: [], seasons: [], gunler: [], settings: { karakterAdi: 'Onur' } };
+  for (const zorluk of [1, 2, 3]) {
+    state.habits = [{ ...habit, zorluk }];
+    for (const render of [context.RutinViews.todayPage, context.RutinViews.bossPage]) {
+      // Boss renders the shared compact template once a real season exists.
+      state.settings.oyunAyar = G.validateConfig(C.GAME_CONFIG);
+      state.seasons = [];
+      state.seasons = [G.createSeason(state, '2026-10-11', G.dayStart('2026-10-11'), 'pip-season', 'pip-seed')];
+      const html = render(state, '2026-10-11');
+      assert.ok(!/[●○]/.test(html));
+      assert.equal((html.match(/class="difficulty-pip(?: is-filled)?"/g) || []).length, 3);
+      assert.equal((html.match(/class="difficulty-pip is-filled"/g) || []).length, zorluk);
+      assert.ok(html.includes(`aria-label="${C.DIFFICULTIES[zorluk]}"`));
+      assert.equal((html.match(/class="difficulty-pip[^"\n]*" aria-hidden="true"/g) || []).length, 3);
+    }
+    state.seasons = [];
+  }
+});
+
+test('main odak çerçevesi kapalı; erişilebilir gezinme ve altın odak halkası korunur', () => {
+  const css = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(__dirname, 'app.js'), 'utf8');
+  assert.match(css, /main:focus\s*,\s*main:focus-visible\s*\{\s*outline:\s*none\s*;/);
+  assert.match(css, /html\s*\{\s*-webkit-tap-highlight-color:\s*transparent\s*;/);
+  assert.match(css, /button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible\s*\{\s*outline:\s*2px solid var\(--accent\)/);
+  assert.match(html, /<main[^>]*tabindex="-1"/);
+  assert.match(app, /main\.focus\(/);
 });
 
 console.log(`\n${passed} test geçti. Saat dilimi: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);

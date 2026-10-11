@@ -5,7 +5,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
   return Object.freeze({
-    VERSION: '1.1.1',
+    VERSION: '1.1.2',
     SCHEMA_VERSION: 2,
     TYPES: Object.freeze(['Güç', 'Zeka', 'Dayanıklılık', 'Odak']),
     DIFFICULTIES: Object.freeze({ 1: 'Kolay', 2: 'Orta', 3: 'Zor' }),

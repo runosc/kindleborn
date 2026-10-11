@@ -64,7 +64,7 @@ button:active:not(:disabled) { translate: none; }
 .bottom-nav { width: calc(100% - 32px); max-width: 568px; padding-bottom: env(safe-area-inset-bottom); }
 .bottom-nav button { border: 0; padding: 0; font-size: 8px; }
 .bottom-nav button[aria-current="page"] { background: none; }
-.app-shell { padding-bottom: calc(150px + env(safe-area-inset-bottom)); }
+.app-shell { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
 .primary, .secondary, .danger, #update-button {
   border: calc(6 * var(--art-pixel)) solid transparent;
   border-image: var(--ui_buton_v01) 6 fill / 1 / 0 stretch;
@@ -126,3 +126,51 @@ button:active:not(:disabled) { translate: none; }
 .result-ribbon { margin: 0; }
 .result-effects { position: relative; height: calc(48 * var(--art-pixel)); width: calc(48 * var(--art-pixel)); margin: 8px auto; display: grid; place-items: center; }
 .result-effects .effect { position: absolute; inset: 0; }
+
+/* v1.1.1 presentation patch: fixed 3 CSS px art pixels in navigation/cards. */
+:root { --nav-h: 72px; --panel-edge: #733e39; }
+html { -webkit-tap-highlight-color: transparent; }
+main:focus, main:focus-visible { outline: none; }
+.app-shell { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+.app-header {
+  border: 0; border-bottom: 3px solid var(--panel-edge); border-image: none;
+  background: var(--bg); padding: 6px 0; margin: 6px 0; min-height: 63px;
+}
+.app-header .icon-button { width: 48px; height: 48px; flex-shrink: 0; }
+.bottom-nav {
+  width: 100%; max-width: 600px; height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  border: 0; border-top: 3px solid var(--panel-edge); border-image: none;
+  background: var(--bg); padding: 3px 6px calc(3px + env(safe-area-inset-bottom));
+}
+.bottom-nav button {
+  min-height: 44px; padding: 0; gap: 3px; grid-template-rows: 48px 12px;
+  align-content: center; line-height: 12px; font-size: 9px; white-space: nowrap;
+}
+.bottom-nav button[aria-current="page"] { color: var(--accent); }
+.bottom-nav .nav-icon, .app-header .icon-button img, .habit-main .type-icon {
+  width: 48px !important; height: 48px !important; transform: none !important;
+}
+.habit-card {
+  grid-template-columns: minmax(0, 1fr) 48px; gap: 6px; min-height: 66px;
+  border: 3px solid var(--line); border-image: none; padding: 6px; background: var(--surface);
+}
+.habit-main {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 6px;
+  align-items: center; min-width: 0; text-align: left;
+}
+.habit-main.edit-habit { border: 0; padding: 0; min-height: 48px; }
+.habit-copy { display: block; min-width: 0; }
+.habit-name {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden; overflow-wrap: anywhere; font-size: 9px; line-height: 18px;
+}
+.habit-meta { display: flex; flex-wrap: nowrap; align-items: center; gap: 6px; margin-top: 3px; line-height: 12px; }
+.habit-type { font-size: 8px; white-space: nowrap; }
+.difficulty { display: inline-flex; gap: 3px; flex-shrink: 0; letter-spacing: 0; }
+/* 2×2 art-pixel centre plus a 1 art-pixel border: 4×4 overall. */
+.difficulty-pip { display: block; width: 12px; height: 12px; border: 3px solid var(--line); background: var(--surface); }
+.difficulty-pip.is-filled { border-color: #feae34; background: #feae34; }
+.habit-lock { display: block; margin-top: 3px; color: var(--muted); font-size: 8px; line-height: 12px; }
+.habit-card .tick-button { width: 48px; height: 48px; min-width: 48px; min-height: 48px; align-self: center; }
+.habit-card .tick-button img { width: 36px !important; height: 36px !important; transform: none !important; }
+.toast { bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom)); }

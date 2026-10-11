@@ -1,4 +1,6 @@
-# Kindleborn v1.1.1
+# Kindleborn v1.1.2
+
+Bu yama telefon denemesindeki üç sunum sorununu düzeltir: main odak çerçevesi, 72 px düz alt gezinme barı ve eş CSS pip'leri olan kompakt alışkanlık satırları. Oyun hesapları/şema/görseller değişmedi. Üst başlık 63 px; tek satırlı kart 66 px, iki satırlı kart 69 px. `node tests.js` 46 test içerir. Ölçüler 360×640 ve 390×844 masaüstü Chrome'da kontrol edildi; gerçek iPhone/Safari denemesi bekliyor. Klasik envanter düzeni ve eşya çıkarma desteği sonraya bırakıldı.
 
 Türkçe, cihazda çalışan alışkanlık takip RPG’si. Düz HTML / CSS / JavaScript; paket, derleme, CDN, sunucu uygulaması, hesap, analitik ve bildirim yok. GitHub Pages yalnız statik dosyaları sunar. Alışkanlık, tik ve oyun verisi IndexedDB’de kalır; internete gönderilmez. İlk çevrimiçi açılışta uygulama kabuğu, yerel font ve bütün oyun sprite’ları önbelleğe alınır.
 
@@ -154,7 +156,7 @@ Depo: [runosc/kindleborn](https://github.com/runosc/kindleborn). Uygulama: [Kind
 
 Pages kaynağı **main / /(root)**, statik sunum için `.nojekyll` kullanılır. Uygulama yolları, manifest scope/start_url/id ve worker kaydı görelidir. Node veya sunucu uygulaması üretimde gerekmez.
 
-Yeni sürümde `config.js VERSION` ve `sw.js VERSION` birlikte artırılır (şimdiki sürüm **1.1.1**). Değişiklikleri kontrol edip testleri çalıştırdıktan sonra:
+Yeni sürümde `config.js VERSION` ve `sw.js VERSION` birlikte artırılır (şimdiki sürüm **1.1.2**). Değişiklikleri kontrol edip testleri çalıştırdıktan sonra:
 
 ```powershell
 node tests.js

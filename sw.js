@@ -1,6 +1,7 @@
 'use strict';
 // Bump VERSION here AND in config.js whenever a cached asset changes.
-const VERSION = '1.1.1';
+// v1.1.1 presentation: main focus, flat navigation, compact habit rows.
+const VERSION = '1.1.2';
 // Scope-specific prefix prevents deleting another app's caches on github.io.
 const PREFIX = `rutin:${self.registration.scope}:`;
 const CACHE = `${PREFIX}v${VERSION}`;
